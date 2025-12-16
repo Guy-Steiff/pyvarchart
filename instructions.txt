@@ -1,0 +1,52 @@
+I was in the middle of corresponding with you about a project I want to make (see below) We got to the point where my flask services would cause hanging tabs and curls.
+
+I found that anything but app.run(host='localhost', port=5050, debug=False, use_reloader=False) cause hanging tabs at http://localhost:5050 I mean: app.run(debug=True, host='0.0.0.0', port=5000) as well as app.run(debug=True) The overall project: Hello, I'd like to make a flask project using a next.js and react platform. I have a python script that I want launched with flask, and the input handling as well as the output handling to be done in next.js / react. I already have a platform of next.js / react ready and this can be a subpage within this platform if possible.
+
+
+Hello, I'd like to make a flask project using a next.js and react platform.
+I have a python script that I want launched with flask, and the input handling as well as the output handling to be done in next.js / react.
+
+I already have a platform of next.js / react ready and this can be a subpage within this platform if possible.
+
+The python script has a class in it called "PyVarChart"
+and it's initialized with the following inputs:
+1) label_spacing, can be set to be "0.05" as defualt.
+2) str_yaxis_var_name, the variable name to be plotted with the later introduced function "analyze", must exist as a title in the analyze's input "pd_data", also must not exist in the input "lst_xaxis_var_names"
+3) lst_xaxis_var_names, the variable names where "str_yaxis_var_name" is broken down accross, with the later introduced function "analyze", all members must exist as a title in the analyze's input "pd_data", also must not exist in the input "str_yaxis_var_name"
+4) str_legend, default: None, will serve as a coloring classifier based on any title over analyze's pd_data, must be a column's title of pd_data.
+5) b_jitter_points, possible values: True or False, will cause points to artifically jitter horizontally so that the observer can get a sense of how many points are present at the same x/y location.
+6) int_boxplots, possible values 1 or 0, prints in addition to the points, boxplots based on their statistics.
+7) int_show_points, possible values 1 or 0, 1 for the points to be shown, 0 for omitting them (if only boxplots or averages are desired visually). can be default 1 (not implemented yet, can be ignored)
+8) int_marker_size, all integers are allowed, get be default 8. 
+9) str_marker_theme, theme of markers, currently supports "Default" (which should be the default value) and "Solid".
+10) str_color_theme, color theme of markers, currently supports 'pvc light' (which should be the default value) and "blue to green to red".
+11) int_continuous_scale, (not implemented yet, can be ignored)
+12) int_reverse_scale, (not implemented yet, can be ignored)
+13) int_show_range_bars, (not implemented yet, can be ignored)
+14) int_show_cell_means, 1 or 0, should be 1 by default, prints cell means in addition to the points.
+15) lst_show_group_means, can default to [], must be a list of 0 or more titles appearing as column titles in pd_data, prints a mean over the grouping variable desired.
+16) int_show_grand_mean, 1 or 0, should be 1 by default, prints a grand mean overall.
+17) int_frame_size_x, can be any integer, default to 8, the x width of the printed figure.
+18) int_frame_size_y, can be any integer, default to 6, the 6 width of the printed figure.
+19) f_hline_value, (not implemented yet, can be ignored set to None)
+20) lst_hlines, (not implemented yet, can be ignored set to None)
+21) lst_axis_control, set to None, not required.
+22) str_title, default: None, can be text, will serve as the title of the figure.
+21) dict_xaxis_orderings, default: None, a dictionary like {'cmp': [4, 3, 2, 1, 0]} or {'skew': ['FF2_FF', 'TT_TT', 'SS2_SS']}, can be used to change the print ordering of xaxis grouping variables, can be done to multiple grouping variables, keys must be titles of pd_data, the values should be values which exist under said title in the same column of pd_data. 
+22) lst_rotation, default None, otherwise, a list of values "Horizontal" or "Vertical", causing the grouping variables of lst_xaxis_var_names to rotate 90deg in the figure, generally should be a list of the same length of lst_xaxis_var_names.
+23) lst_xaxis_font_size, default None, otherwise, a list of integers determining the font size of each of the grouping variables of lst_xaxis_var_names, generally should be a list of the same length of lst_xaxis_var_names.
+
+once initialized it has an inner function:
+analyze(self, pd_data: pd.DataFrame) -> plt.Axes
+
+the pd_data is a pandas DataFrame containing information to be analyzed and printed by the script.
+returns the packed duo of "fig" and "ax" as well as prints a figure to the screen based on the initialization inputs and pd_data.
+
+I'd like the user to be able to drag a csv or an excel file, or be able to browse to it from the page, upload it, then proceed to set up the inputs with some kind of a smart form which makes suggestions or even using dropboxes,
+Then the user would have an "analyze" button which will cause the python script to run, and the python would save the figure a png which will be presented immidately on the same page, the user can then change parameters and "analyze" again to further increase accuracy of the desirable figure to their wishes.
+
+1. I'd like an emphasis that the forms will remain the same on the same session when the user is using it.
+
+Please propose a flask solution which can be integratable to a next.js / react platform.
+
+netstat -ano | findstr :5000
