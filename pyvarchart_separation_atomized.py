@@ -458,13 +458,19 @@ class PyVarChart:
             also saves other dataframe and variables useful for plotting in self.
             Returns the processed DataFrame used for plotting.
             Must be run prior to plot().
-            Must be run at EVERY change of the following variables (in order to .plot() to work correctly):
+            Must be run at EVERY change of the following variables (in order for .plot() to work correctly):
             str_yaxis_var_name
             lst_xaxis_var_names
             str_legend
             str_marker_theme
             int_continuous_scale
             dict_xaxis_orderings
+
+            Helper methods (called by analyze):
+            - _validate_input_data(): Validate DataFrame columns and configurations
+            - _preprocess_dataframe(): Normalize values and apply custom orderings
+            - _build_plot_series(): Create MultiIndex Series for plotting
+            - _process_legend_scale(): Determine continuous vs categorical scaling
 
         plot(int_fig_num: int) -> Tuple[plt.Figure, plt.Axes]:
             Create the matplotlib figure and axes for the variability chart.
@@ -474,6 +480,15 @@ class PyVarChart:
             Returns:
                 Tuple of (figure, axes) matplotlib objects that can be further customized
                 or saved to file.
+
+            Helper methods (called by plot):
+            - _build_colormap(): Build colormap from theme configuration
+            - _generate_color_dict(): Map legend values to colors
+            - _plot_boxplots(): Draw boxplots for each group
+            - _plot_statistical_overlays(): Draw grand/group/cell means
+            - _plot_data_points(): Draw individual data points with colors/markers
+            - _configure_axes(): Set limits, labels, ticks, hierarchical x-axis
+            - _add_legend(): Add formatted legend to plot
 
     Example::
 
@@ -560,43 +575,23 @@ class PyVarChart:
             shapes = ['o', 's', '^', 'D', 'v', 'P', '*', '<', '>', 'X']
         return {val: shape for val, shape in zip(values, cycle(shapes))}
 
-    def analyze(self, pd_data: pd.DataFrame) -> pd.DataFrame:
-        """Generate a variability chart from the provided DataFrame.
+    def _validate_input_data(self, pd_data: pd.DataFrame) -> None:
+        """Validate input DataFrame has required columns and configurations.
 
-        This method creates a matplotlib figure with hierarchical x-axis grouping,
-        optional boxplots, means, and customizable visual styling based on the
-        instance configuration.
+        Performs validation on:
+        - Required columns existence (y-axis, x-axis variables, legend)
+        - No overlap between y-axis and x-axis variables
+        - Custom orderings are valid (fixes missing/extra values)
+        - Group means variables are in x-axis grouping
 
         Args:
-            int_fig_num: Matplotlib figure number for the plot (useful for managing multiple figures).
-            pd_data: DataFrame containing the data to visualize. Must include columns
-                    specified in str_yaxis_var_name, lst_xaxis_var_names, and str_legend.
-
-        Returns:
-            dataframe
-            Tuple of (figure, axes) matplotlib objects that can be further customized
-            or saved to file.
+            pd_data: DataFrame to validate.
 
         Raises:
-            ValueError: If required columns are missing from pd_data, or if invalid
-                       custom orderings are specified.
-            KeyError: If specified column names don't exist in the DataFrame.
+            ValueError: If required columns are missing or y-axis overlaps x-axis.
 
-        Example::
-
-            pvc = PyVarChart(str_yaxis_var_name='value', lst_xaxis_var_names=['group1', 'group2'])
-            pd_plot = pvc.analyze(my_dataframe)
-
-        Note:
-            Must be run prior to plot().
-            Must be run at EVERY change of the following variables (in order to .plot() to work correctly):
-            str_yaxis_var_name
-            lst_xaxis_var_names
-            str_legend
-            str_marker_theme
-            int_continuous_scale
-            dict_xaxis_orderings
-
+        Side effects:
+            May modify self.dict_xaxis_orderings to add missing values.
         """
         # Validation: Check if required columns exist
         missing_cols = []
@@ -652,36 +647,55 @@ class PyVarChart:
                 print(f"Warning: Group means requested for variables not in x-axis grouping: {invalid_means}. "
                       f"These will be skipped.")
 
-        # inherit only relevant instance variables
-        str_yaxis_var_name = self.str_yaxis_var_name
-        lst_xaxis_var_names = self.lst_xaxis_var_names
-        str_legend = self.str_legend
-        str_marker_theme = self.str_marker_theme
-        int_continuous_scale = self.int_continuous_scale
-        dict_xaxis_orderings = self.dict_xaxis_orderings
+    def _preprocess_dataframe(self, pd_data: pd.DataFrame) -> pd.DataFrame:
+        """Preprocess DataFrame by normalizing values and applying custom orderings.
 
-        for col in lst_xaxis_var_names:
+        Operations:
+        - Normalize float grouping columns to int if they represent whole numbers
+        - Apply categorical dtype with custom ordering if specified
+
+        Args:
+            pd_data: DataFrame to preprocess.
+
+        Returns:
+            Modified DataFrame with normalized values and categorical types applied.
+        """
+        for col in self.lst_xaxis_var_names:
             # Normalize float grouping variables to int if whole number
             if pd.api.types.is_float_dtype(pd_data[col]):
                 with pd.option_context('mode.chained_assignment', None):
                     pd_data[col] = pd_data[col].apply(normalize_grouping_value)
 
             # Apply category dtype if custom ordering provided
-            if dict_xaxis_orderings and col in dict_xaxis_orderings:
-                categories = pd.CategoricalDtype(categories=dict_xaxis_orderings[col], ordered=True)
+            if self.dict_xaxis_orderings and col in self.dict_xaxis_orderings:
+                categories = pd.CategoricalDtype(categories=self.dict_xaxis_orderings[col], ordered=True)
                 with pd.option_context('mode.chained_assignment', None):
                     pd_data[col] = pd_data[col].astype(categories)
                 # pd_data[col] = pd_data[col].astype(categories)
 
+        return pd_data
+
+    def _build_plot_series(self, pd_data: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
+        """Build MultiIndex Series for plotting from preprocessed DataFrame.
+
+        Creates two Series:
+        - pd_plot: Values to plot with MultiIndex of grouping variables
+        - pd_plot_legend_vals: Legend values corresponding to each data point
+
+        Args:
+            pd_data: Preprocessed DataFrame with grouping columns.
+
+        Returns:
+            Tuple of (pd_plot, pd_plot_legend_vals) Series.
+        """
         # Use grouping vars as MultiIndex
-        lst_grouping_vars = lst_xaxis_var_names
+        lst_grouping_vars = self.lst_xaxis_var_names
 
         # Select only grouping vars and y-axis var from dataframe
         # (Filtering based on str_filering_string not implemented here)
         # We'll assume full data is used.
         # Get unique combos of grouping variables, sorted
         pd_unique_combos = pd_data[lst_grouping_vars].drop_duplicates()
-
         pd_unique_combos = pd_unique_combos.sort_values(lst_grouping_vars)
 
         lst_data, lst_index_levels = [], []
@@ -695,86 +709,160 @@ class PyVarChart:
             if pd_curr.empty:
                 continue
             for _, row_match in pd_curr.iterrows():
-                lst_data.append(row_match[str_yaxis_var_name])
+                lst_data.append(row_match[self.str_yaxis_var_name])
                 lst_index_levels.append(tuple(row))
-                lst_legend_vals.append(normalize_grouping_value(row_match[str_legend]) if str_legend else None)
+                lst_legend_vals.append(normalize_grouping_value(row_match[self.str_legend]) if self.str_legend else None)
 
         pd_plot = pd.Series(lst_data, index=pd.MultiIndex.from_tuples(lst_index_levels, names=lst_grouping_vars), name='Data')
         pd_plot_legend_vals = pd.Series(lst_legend_vals, index=pd_plot.index, name='Legend')
 
-        if str_legend and str_legend in pd_data.columns:
-            raw_legend_values = pd_data[str_legend].dropna().unique()
-            normalized_legend_values = sorted(set(normalize_grouping_value(val) for val in raw_legend_values))
+        return pd_plot, pd_plot_legend_vals
 
-            # Check if continuous scale is enabled and legend values are numeric
-            use_continuous_scale = False
-            value_to_color_key = {}  # Maps actual value -> color key (for interpolation)
-            representative_values = []  # The 5-6 values to show in legend
+    def _process_legend_scale(self, pd_data: pd.DataFrame) -> Tuple[bool, List[Any], Dict[Any, float], List[Any]]:
+        """Process legend values and determine continuous vs categorical scale.
 
-            if int_continuous_scale == 1 and len(normalized_legend_values) > 0:
-                # Check if ALL values are numeric (if any string found, force categorical)
-                all_numeric = True
-                numeric_values = []
+        If int_continuous_scale=1 and all legend values are numeric:
+        - Calculates 5-6 representative values using percentiles
+        - Creates value_to_color_key mapping for color interpolation
+        - Returns use_continuous_scale=True
 
-                try:
+        Otherwise falls back to categorical mode with all unique values.
+
+        Args:
+            pd_data: DataFrame containing legend column.
+
+        Returns:
+            Tuple of:
+            - use_continuous_scale: bool indicating continuous (True) or categorical (False)
+            - representative_values: List of values to show in legend
+            - value_to_color_key: Dict mapping values to normalized positions (0-1)
+            - normalized_legend_values: All unique legend values, normalized
+        """
+        if not self.str_legend or self.str_legend not in pd_data.columns:
+            return False, [], {}, [None]
+
+        raw_legend_values = pd_data[self.str_legend].dropna().unique()
+        normalized_legend_values = sorted(set(normalize_grouping_value(val) for val in raw_legend_values))
+
+        # Check if continuous scale is enabled and legend values are numeric
+        use_continuous_scale = False
+        value_to_color_key = {}  # Maps actual value -> color key (for interpolation)
+        representative_values = []  # The 5-6 values to show in legend
+
+        if self.int_continuous_scale == 1 and len(normalized_legend_values) > 0:
+            # Check if ALL values are numeric (if any string found, force categorical)
+            all_numeric = True
+            numeric_values = []
+
+            try:
+                for val in normalized_legend_values:
+                    numeric_val = float(val)
+                    numeric_values.append(numeric_val)
+            except (ValueError, TypeError):
+                # Found a string or non-numeric value - force categorical
+                all_numeric = False
+
+            if all_numeric and len(numeric_values) > 0:
+                use_continuous_scale = True
+
+                # Select 5-6 representative values using percentiles
+                # Always include min and max as endpoints
+                min_val = min(numeric_values)
+                max_val = max(numeric_values)
+
+                if min_val == max_val:
+                    # All values are the same - just use categorical
+                    use_continuous_scale = False
+                else:
+                    # Calculate representative values at key percentiles
+                    # Using 0%, 20%, 40%, 60%, 80%, 100% for 6 values
+                    percentiles = [0, 20, 40, 60, 80, 100]
+                    representative_values = [
+                        np.percentile(numeric_values, p) for p in percentiles
+                    ]
+
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    representative_values = [
+                        x for x in representative_values
+                        if not (x in seen or seen.add(x))
+                    ]
+
+                    # Create a mapping: each actual value maps to its interpolated position
+                    # in the color gradient
                     for val in normalized_legend_values:
                         numeric_val = float(val)
-                        numeric_values.append(numeric_val)
-                except (ValueError, TypeError):
-                    # Found a string or non-numeric value - force categorical
-                    all_numeric = False
+                        # Normalize to 0-1 range for color interpolation
+                        normalized_pos = (numeric_val - min_val) / (max_val - min_val)
+                        value_to_color_key[val] = normalized_pos
 
-                if all_numeric and len(numeric_values) > 0:
-                    use_continuous_scale = True
+                    # Representative values also need their positions
+                    for rep_val in representative_values:
+                        normalized_pos = (rep_val - min_val) / (max_val - min_val)
+                        value_to_color_key[rep_val] = normalized_pos
 
-                    # Select 5-6 representative values using percentiles
-                    # Always include min and max as endpoints
-                    min_val = min(numeric_values)
-                    max_val = max(numeric_values)
+        # If not using continuous scale, fall back to categorical
+        if not use_continuous_scale:
+            # Categorical mode: each unique value gets distinct color
+            representative_values = normalized_legend_values
 
-                    if min_val == max_val:
-                        # All values are the same - just use categorical
-                        use_continuous_scale = False
-                    else:
-                        # Calculate representative values at key percentiles
-                        # Using 0%, 20%, 40%, 60%, 80%, 100% for 6 values
-                        percentiles = [0, 20, 40, 60, 80, 100]
-                        representative_values = [
-                            np.percentile(numeric_values, p) for p in percentiles
-                        ]
+        return use_continuous_scale, representative_values, value_to_color_key, normalized_legend_values
 
-                        # Remove duplicates while preserving order
-                        seen = set()
-                        representative_values = [
-                            x for x in representative_values
-                            if not (x in seen or seen.add(x))
-                        ]
+    def analyze(self, pd_data: pd.DataFrame) -> pd.DataFrame:
+        """Generate a variability chart from the provided DataFrame.
 
-                        # Create a mapping: each actual value maps to its interpolated position
-                        # in the color gradient
-                        for val in normalized_legend_values:
-                            numeric_val = float(val)
-                            # Normalize to 0-1 range for color interpolation
-                            normalized_pos = (numeric_val - min_val) / (max_val - min_val)
-                            value_to_color_key[val] = normalized_pos
+        This method creates a matplotlib figure with hierarchical x-axis grouping,
+        optional boxplots, means, and customizable visual styling based on the
+        instance configuration.
 
-                        # Representative values also need their positions
-                        for rep_val in representative_values:
-                            normalized_pos = (rep_val - min_val) / (max_val - min_val)
-                            value_to_color_key[rep_val] = normalized_pos
+        Args:
+            int_fig_num: Matplotlib figure number for the plot (useful for managing multiple figures).
+            pd_data: DataFrame containing the data to visualize. Must include columns
+                    specified in str_yaxis_var_name, lst_xaxis_var_names, and str_legend.
 
-            # If not using continuous scale, fall back to categorical
-            if not use_continuous_scale:
-                # Categorical mode: each unique value gets distinct color
-                representative_values = normalized_legend_values
+        Returns:
+            dataframe
+            Tuple of (figure, axes) matplotlib objects that can be further customized
+            or saved to file.
 
-            # Build marker dict
-            marker_dict = self._get_marker_dict(representative_values, str_marker_theme)
+        Raises:
+            ValueError: If required columns are missing from pd_data, or if invalid
+                       custom orderings are specified.
+            KeyError: If specified column names don't exist in the DataFrame.
+
+        Example:
+
+            pvc = PyVarChart(str_yaxis_var_name='value', lst_xaxis_var_names=['group1', 'group2'])
+            pd_plot = pvc.analyze(my_dataframe)
+
+        NOte: Must be run at EVERY change of the following variables (in order for .plot() to work correctly):
+            str_yaxis_var_name
+            lst_xaxis_var_names
+            str_legend
+            str_marker_theme
+            int_continuous_scale
+            dict_xaxis_orderings
+
+        """
+        # Validate input data
+        self._validate_input_data(pd_data)
+
+        # Preprocess DataFrame (normalize values, apply orderings)
+        pd_data = self._preprocess_dataframe(pd_data)
+
+        # Build core data structures
+        pd_plot, pd_plot_legend_vals = self._build_plot_series(pd_data)
+
+        # Process legend and determine continuous vs categorical scale
+        use_continuous_scale, representative_values, value_to_color_key, normalized_legend_values = \
+            self._process_legend_scale(pd_data)
+
+        # Build marker dict
+        if self.str_legend:
+            marker_dict = self._get_marker_dict(representative_values, self.str_marker_theme)
         else:
             marker_dict = {}
-            normalized_legend_values = [None]
             representative_values = []
-            value_to_color_key = {}
 
         # save results to instance variables
         self.pd_plot = pd_plot
@@ -787,154 +875,123 @@ class PyVarChart:
         self.value_to_color_key = value_to_color_key
         return pd_plot
 
-    def plot(self, int_fig_number=1) -> Tuple[plt.Figure, plt.Axes]:
-        """Plot the variability chart using data from previous analyze() call.
+    def _build_colormap(self) -> mcolors.Colormap:
+        """Build colormap from color theme configuration.
 
-        Args:
-            int_fig_number: Matplotlib figure number for the plot.
+        Handles:
+        - Custom 'blue_to_green_to_red' theme with optional reversal
+        - Matplotlib colormaps with fallback to custom theme
+        - Reversal via int_reverse_color_scheme
 
         Returns:
-            Tuple of (figure, axes) matplotlib objects.
-
-        Raises:
-            ValueError: If analyze() hasn't been called yet.
-
-        Example:
-        fig, ax = pvc.plot(1)
-            fig.savefig('output.png')
-
+            Matplotlib colormap object.
         """
-        # Check if analyze was called
-        if self.pd_plot is None:
-            raise ValueError("Must call analyze() with the data before plot()")
-
-        # Retrieve stored data from analyze()
-        pd_plot = self.pd_plot
-        pd_plot_legend_vals = self.pd_plot_legend_vals
-        pd_data = self.pd_data_processed
-        marker_dict = self.marker_dict
-        normalized_legend_values = self.normalized_legend_values
-        representative_values = self.representative_values
-        use_continuous_scale = self.use_continuous_scale
-        value_to_color_key = self.value_to_color_key
-
-        # inherit only relevant instance variables
-        label_spacing = self.label_spacing
-        str_yaxis_var_name = self.str_yaxis_var_name
-        lst_xaxis_var_names = self.lst_xaxis_var_names
-        str_legend = self.str_legend
-        int_jitter_points = self.int_jitter_points
-        int_boxplots = self.int_boxplots
-        int_show_points = self.int_show_points
-        int_marker_size = self.int_marker_size
-        # str_marker_theme = self.str_marker_theme
-        str_color_theme = self.str_color_theme
-        # int_continuous_scale = self.int_continuous_scale
-        int_reverse_color_scheme = self.int_reverse_color_scheme
-        int_show_cell_means = self.int_show_cell_means
-        lst_show_group_means = self.lst_show_group_means
-        int_show_grand_mean = self.int_show_grand_mean
-        int_frame_size_x = self.int_frame_size_x
-        int_frame_size_y = self.int_frame_size_y
-        str_title = self.str_title
-        # dict_xaxis_orderings = self.dict_xaxis_orderings
-        lst_rotation = self.lst_rotation
-        lst_xaxis_font_size = self.lst_xaxis_font_size
-
-        if lst_rotation is None:
-            lst_rotation = ['Horizontal'] * len(lst_xaxis_var_names)
-
-        # Build color dict based on representative values
-        if str_legend:
-            # Handle custom 'Blue to Green to Red' gradient (normalize by removing spaces and lowercasing)
-            normalized_theme = str_color_theme.lower().replace(' ', '_')
-            if normalized_theme == 'blue_to_green_to_red':
-                color_list = ['blue', 'green', 'red']
-                if int_reverse_color_scheme == 1:
-                    color_list = color_list[::-1]
-                cmap = mcolors.LinearSegmentedColormap.from_list('custom', color_list)
-            else:
-                # Try to get colormap from matplotlib
-                theme_name = str_color_theme
-                base_theme_name = theme_name
-
-                # Try to get the colormap
-                try:
-                    cmap = mpl.colormaps[base_theme_name]
-                except (ValueError, KeyError):
-                    # Fallback to blue_to_green_to_red if colormap not found
-                    print(f"Warning: Colormap '{str_color_theme}' not found. Falling back to 'blue_to_green_to_red'.")
-                    color_list = ['blue', 'green', 'red']
-                    if int_reverse_color_scheme == 1:
-                        color_list = color_list[::-1]
-                    cmap = mcolors.LinearSegmentedColormap.from_list('custom', color_list)
-                else:
-                    # Apply reversal if requested
-                    should_reverse = int_reverse_color_scheme == 1
-                    if should_reverse:
-                        cmap = cmap.reversed()
-
-            # Generate colors based on mode
-            if use_continuous_scale:
-                # Continuous mode: use interpolated colors
-                # Create color dict for all actual values using interpolation
-                color_dict = {}
-                for val, normalized_pos in value_to_color_key.items():
-                    color_dict[val] = cmap(normalized_pos)
-
-                # Also ensure representative values have colors
-                for rep_val in representative_values:
-                    if rep_val not in color_dict:
-                        normalized_pos = value_to_color_key.get(rep_val, 0.5)
-                        color_dict[rep_val] = cmap(normalized_pos)
-            else:
-                # Categorical mode: discrete colors
-                n_colors = len(representative_values)
-                colors = [cmap(i / (n_colors - 1 if n_colors > 1 else 1)) for i in range(n_colors)]
-                color_dict = dict(zip(representative_values, colors))
-
-            # marker_dict = self._get_marker_dict(representative_values)
+        # Handle custom 'Blue to Green to Red' gradient (normalize by removing spaces and lowercasing)
+        normalized_theme = self.str_color_theme.lower().replace(' ', '_')
+        if normalized_theme == 'blue_to_green_to_red':
+            color_list = ['blue', 'green', 'red']
+            if self.int_reverse_color_scheme == 1:
+                color_list = color_list[::-1]
+            return mcolors.LinearSegmentedColormap.from_list('custom', color_list)
         else:
+            # Try to get colormap from matplotlib
+            theme_name = self.str_color_theme
+            base_theme_name = theme_name
+
+            # Try to get the colormap
+            try:
+                cmap = mpl.colormaps[base_theme_name]
+            except (ValueError, KeyError):
+                # Fallback to blue_to_green_to_red if colormap not found
+                print(f"Warning: Colormap '{self.str_color_theme}' not found. Falling back to 'blue_to_green_to_red'.")
+                color_list = ['blue', 'green', 'red']
+                if self.int_reverse_color_scheme == 1:
+                    color_list = color_list[::-1]
+                return mcolors.LinearSegmentedColormap.from_list('custom', color_list)
+            else:
+                # Apply reversal if requested
+                should_reverse = self.int_reverse_color_scheme == 1
+                if should_reverse:
+                    cmap = cmap.reversed()
+                return cmap
+
+    def _generate_color_dict(self, cmap: mcolors.Colormap) -> Dict[Any, Any]:
+        """Generate color dictionary mapping legend values to colors.
+
+        Args:
+            cmap: Matplotlib colormap to use.
+
+        Returns:
+            Dictionary mapping representative/actual values to RGBA colors.
+        """
+        if not self.str_legend:
+            return {}
+
+        if self.use_continuous_scale:
+            # Continuous mode: use interpolated colors
+            # Create color dict for all actual values using interpolation
             color_dict = {}
-            marker_dict = {}
-            normalized_legend_values = [None]
+            for val, normalized_pos in self.value_to_color_key.items():
+                color_dict[val] = cmap(normalized_pos)
 
-        fig = plt.figure(int_fig_number, figsize=(int_frame_size_x, int_frame_size_y))
-        ax = plt.gca()
+            # Also ensure representative values have colors
+            for rep_val in self.representative_values:
+                if rep_val not in color_dict:
+                    normalized_pos = self.value_to_color_key.get(rep_val, 0.5)
+                    color_dict[rep_val] = cmap(normalized_pos)
+        else:
+            # Categorical mode: discrete colors
+            n_colors = len(self.representative_values)
+            colors = [cmap(i / (n_colors - 1 if n_colors > 1 else 1)) for i in range(n_colors)]
+            color_dict = dict(zip(self.representative_values, colors))
 
-        # Build mapping from unique group index -> x-position
-        unique_index_order = list(dict.fromkeys(pd_plot.index.to_list()))  # preserve order
-        index_to_xpos = {idx: i for i, idx in enumerate(unique_index_order)}
+        return color_dict
 
-        # BOX DATA for optional boxplot
-        if int_boxplots in [1, 2]:
-            grouped = pd_data.groupby(lst_xaxis_var_names, observed=False)[str_yaxis_var_name]
-            box_data = [grouped.get_group(idx).dropna().values for idx in unique_index_order if idx in grouped.groups]
-            ax.boxplot(box_data, positions=range(len(box_data)), widths=0.5, patch_artist=True,
-                       boxprops=dict(facecolor='lightgray', color='black'),
-                       medianprops=dict(color='black'),
-                       whiskerprops=dict(color='black'),
-                       capprops=dict(color='black'),
-                       flierprops=dict(marker='o', markersize=4, linestyle='none', markerfacecolor='gray'))
+    def _plot_boxplots(self, ax: plt.Axes, unique_index_order: List[Tuple]) -> None:
+        """Plot boxplots for each x-axis group.
 
+        Args:
+            ax: Matplotlib axes to plot on.
+            unique_index_order: Ordered list of unique group index tuples.
+        """
+        if self.int_boxplots not in [1, 2]:
+            return
 
-        if int_show_grand_mean:
-            grand_mean = pd_plot.mean()
+        grouped = self.pd_data_processed.groupby(self.lst_xaxis_var_names, observed=False)[self.str_yaxis_var_name]
+        box_data = [grouped.get_group(idx).dropna().values for idx in unique_index_order if idx in grouped.groups]
+        ax.boxplot(box_data, positions=range(len(box_data)), widths=0.5, patch_artist=True,
+                   boxprops=dict(facecolor='lightgray', color='black'),
+                   medianprops=dict(color='black'),
+                   whiskerprops=dict(color='black'),
+                   capprops=dict(color='black'),
+                   flierprops=dict(marker='o', markersize=4, linestyle='none', markerfacecolor='gray'))
+
+    def _plot_statistical_overlays(self, ax: plt.Axes, index_to_xpos: Dict[Tuple, int]) -> None:
+        """Plot statistical overlays: grand mean, group means, cell means.
+
+        Args:
+            ax: Matplotlib axes to plot on.
+            index_to_xpos: Mapping from group index tuples to x positions.
+        """
+        # Grand mean
+        if self.int_show_grand_mean:
+            grand_mean = self.pd_plot.mean()
             ax.axhline(grand_mean, color='black', linestyle=':', linewidth=1.5, label='Grand Mean')
 
-        if lst_show_group_means:
-            for level_name in lst_show_group_means:
-                if level_name not in lst_xaxis_var_names:
+        # Group means
+        if self.lst_show_group_means:
+            for level_name in self.lst_show_group_means:
+                if level_name not in self.lst_xaxis_var_names:
                     continue  # Skip invalid groupings
 
-                level_idx = lst_xaxis_var_names.index(level_name)
-                grouped = pd_plot.groupby(level=level_idx)
+                level_idx = self.lst_xaxis_var_names.index(level_name)
+                grouped = self.pd_plot.groupby(level=level_idx)
 
                 for group_val, group_data in grouped:
                     mean_val = group_data.mean()
 
                     # Get x positions matching this group value at the level
-                    matching_indices = [idx for idx in pd_plot.index if idx[level_idx] == group_val]
+                    matching_indices = [idx for idx in self.pd_plot.index if idx[level_idx] == group_val]
                     matching_positions = [index_to_xpos[idx] for idx in matching_indices]
 
                     if matching_positions:
@@ -971,46 +1028,63 @@ class PyVarChart:
                                       linestyles='--')
                         # Draws TWO lines: 0→5 and 12→17
 
-        # POINTS
-        if int_boxplots in [0, 1] and int_show_points:
-            for (idx_val, y_val), legend_val in zip(pd_plot.items(), pd_plot_legend_vals):
-                x_base = index_to_xpos[idx_val]
-                x_pos = x_base + np.random.uniform(-0.2, 0.2) if int_jitter_points else x_base
-
-                if str_legend:
-                    norm_val = normalize_grouping_value(legend_val)
-
-                    # Use the normalized value directly as color key
-                    # In continuous mode, all actual values are in color_dict
-                    # In categorical mode, only unique values are in color_dict
-                    color = color_dict.get(norm_val, 'blue')
-
-                    # For markers, use representative values in continuous mode
-                    if use_continuous_scale and representative_values:
-                        # Find closest representative value for marker
-                        if norm_val in value_to_color_key:
-                            # Use the first representative value's marker (continuous uses same marker)
-                            marker_key = representative_values[0]
-                        else:
-                            marker_key = representative_values[0] if representative_values else norm_val
-                    else:
-                        marker_key = norm_val
-
-                    marker = marker_dict.get(marker_key, 'o')
-                else:
-                    color = 'blue'
-                    marker = 'o'
-
-                ax.plot(x_pos, y_val, marker=marker, color=color, linestyle='none', markersize=int_marker_size)
-
-        if int_show_cell_means:
-            cell_means = pd_plot.groupby(level=list(range(pd_plot.index.nlevels))).mean()
+        # Cell means
+        if self.int_show_cell_means:
+            cell_means = self.pd_plot.groupby(level=list(range(self.pd_plot.index.nlevels))).mean()
             for idx, mean_val in cell_means.items():
                 xpos = index_to_xpos.get(idx, None)
                 if xpos is not None:
                     ax.hlines(mean_val, xpos - 0.2, xpos + 0.2, colors='black', linewidth=1.5, linestyles='-')
 
-        # Annotate grouped x-axis with rotation if too many groups
+    def _plot_data_points(self, ax: plt.Axes, index_to_xpos: Dict[Tuple, int], color_dict: Dict[Any, Any]) -> None:
+        """Plot individual data points with colors, markers, and optional jitter.
+
+        Args:
+            ax: Matplotlib axes to plot on.
+            index_to_xpos: Mapping from group index tuples to x positions.
+            color_dict: Mapping from legend values to RGBA colors.
+        """
+        if self.int_boxplots not in [0, 1] or not self.int_show_points:
+            return
+
+        for (idx_val, y_val), legend_val in zip(self.pd_plot.items(), self.pd_plot_legend_vals):
+            x_base = index_to_xpos[idx_val]
+            x_pos = x_base + np.random.uniform(-0.2, 0.2) if self.int_jitter_points else x_base
+
+            if self.str_legend:
+                norm_val = normalize_grouping_value(legend_val)
+
+                # Use the normalized value directly as color key
+                # In continuous mode, all actual values are in color_dict
+                # In categorical mode, only unique values are in color_dict
+                color = color_dict.get(norm_val, 'blue')
+
+                # For markers, use representative values in continuous mode
+                if self.use_continuous_scale and self.representative_values:
+                    # Find closest representative value for marker
+                    if norm_val in self.value_to_color_key:
+                        # Use the first representative value's marker (continuous uses same marker)
+                        marker_key = self.representative_values[0]
+                    else:
+                        marker_key = self.representative_values[0] if self.representative_values else norm_val
+                else:
+                    marker_key = norm_val
+
+                marker = self.marker_dict.get(marker_key, 'o')
+            else:
+                color = 'blue'
+                marker = 'o'
+
+            ax.plot(x_pos, y_val, marker=marker, color=color, linestyle='none', markersize=self.int_marker_size)
+
+    def _configure_axes(self, ax: plt.Axes, unique_index_order: List[Tuple]) -> None:
+        """Configure axes limits, labels, ticks, and hierarchical x-axis.
+
+        Args:
+            ax: Matplotlib axes to configure.
+            unique_index_order: Ordered list of unique group index tuples.
+        """
+        # Set up x-axis ticks and labels
         ax.set_xticks(range(len(unique_index_order)))
         ax.set_xticklabels('')
         ax.set_xlabel('')
@@ -1018,46 +1092,105 @@ class PyVarChart:
         # if lst_rotation is None:
         #     lst_rotation = ['Vertical'] * len(lst_xaxis_var_names)
 
-        unique_index = pd.MultiIndex.from_tuples(unique_index_order, names=lst_xaxis_var_names)
+        unique_index = pd.MultiIndex.from_tuples(unique_index_order, names=self.lst_xaxis_var_names)
         label_group_bar_table(ax,
                               pd.Series(index=unique_index, dtype='object'),
-                              lst_rotation,
-                              spacing=label_spacing,
-                              lst_fontsize=lst_xaxis_font_size)
+                              self.lst_rotation if self.lst_rotation else ['Horizontal'] * len(self.lst_xaxis_var_names),
+                              spacing=self.label_spacing,
+                              lst_fontsize=self.lst_xaxis_font_size)
 
+        # Set limits
         ax.set_xlim(-0.5, len(unique_index_order) - 0.5)
-        f_ylim_min = pd_data[str_yaxis_var_name].min()
-        f_ylim_max = pd_data[str_yaxis_var_name].max()
+        f_ylim_min = self.pd_data_processed[self.str_yaxis_var_name].min()
+        f_ylim_max = self.pd_data_processed[self.str_yaxis_var_name].max()
         ax.set_ylim(f_ylim_min * 0.99 if f_ylim_min > 0 else f_ylim_min * 1.01,
                     f_ylim_max * 1.01 if f_ylim_max > 0 else f_ylim_max * 0.99)
 
-        ax.set_ylabel(str_yaxis_var_name)
-        plt.title(str_title if str_title else 'Variability Chart')
+        # Set labels and styling
+        ax.set_ylabel(self.str_yaxis_var_name)
+        plt.title(self.str_title if self.str_title else 'Variability Chart')
         plt.grid(True)
 
-        if str_legend:
-            handles = []
-            labels = []
-            for val in representative_values:
-                h, = ax.plot([], [], marker=marker_dict.get(val, 'o'), color=color_dict.get(val, 'blue'),
-                             linestyle='none', markersize=int_marker_size)
-                handles.append(h)
+    def _add_legend(self, ax: plt.Axes, color_dict: Dict[Any, Any]) -> None:
+        """Add legend to the plot with formatted labels.
 
-                # Format the label appropriately
-                if use_continuous_scale:
-                    # Format numeric values nicely
-                    if abs(val) >= 1000:
-                        labels.append(f"{val:.0f}")
-                    elif abs(val) >= 10:
-                        labels.append(f"{val:.1f}")
-                    else:
-                        labels.append(f"{val:.2f}")
+        Args:
+            ax: Matplotlib axes to add legend to.
+            color_dict: Mapping from legend values to RGBA colors.
+        """
+        if not self.str_legend:
+            return
+
+        handles = []
+        labels = []
+        for val in self.representative_values:
+            h, = ax.plot([], [], marker=self.marker_dict.get(val, 'o'), color=color_dict.get(val, 'blue'),
+                         linestyle='none', markersize=self.int_marker_size)
+            handles.append(h)
+
+            # Format the label appropriately
+            if self.use_continuous_scale:
+                # Format numeric values nicely
+                if abs(val) >= 1000:
+                    labels.append(f"{val:.0f}")
+                elif abs(val) >= 10:
+                    labels.append(f"{val:.1f}")
                 else:
-                    labels.append(legend_label(val))
+                    labels.append(f"{val:.2f}")
+            else:
+                labels.append(legend_label(val))
 
-            ax.legend(handles=handles, labels=labels, title=str_legend)
+        ax.legend(handles=handles, labels=labels, title=self.str_legend)
 
-        bottom_margin = estimate_bottom_margin(len(lst_xaxis_var_names), lst_rotation, label_spacing)
+    def plot(self, int_fig_number=1) -> Tuple[plt.Figure, plt.Axes]:
+        """Plot the variability chart using data from previous analyze() call.
+
+        Args:
+            int_fig_number: Matplotlib figure number for the plot.
+
+        Returns:
+            Tuple of (figure, axes) matplotlib objects.
+
+        Raises:
+            ValueError: If analyze() hasn't been called yet.
+
+        Example::
+
+            fig, ax = pvc.plot(1)
+            fig.savefig('output.png')
+
+        """
+        # Check if analyze was called
+        if self.pd_plot is None:
+            raise ValueError("Must call analyze() with the data before plot()")
+
+        # Create figure
+        fig = plt.figure(int_fig_number, figsize=(self.int_frame_size_x, self.int_frame_size_y))
+        ax = plt.gca()
+
+        # Build mapping from unique group index -> x-position
+        unique_index_order = list(dict.fromkeys(self.pd_plot.index.to_list()))  # preserve order
+        index_to_xpos = {idx: i for i, idx in enumerate(unique_index_order)}
+
+        # Build colormap and color dictionary
+        cmap = self._build_colormap()
+        color_dict = self._generate_color_dict(cmap)
+
+        # Plot layers
+        self._plot_boxplots(ax, unique_index_order)
+        self._plot_statistical_overlays(ax, index_to_xpos)
+        self._plot_data_points(ax, index_to_xpos, color_dict)
+
+        # Configure axes and add legend
+        self._configure_axes(ax, unique_index_order)
+        self._add_legend(ax, color_dict)
+
+        # Final adjustments
+        bottom_margin = estimate_bottom_margin(
+            len(self.lst_xaxis_var_names),
+            self.lst_rotation if self.lst_rotation else ['Horizontal'] * len(self.lst_xaxis_var_names),
+            self.label_spacing
+        )
         plt.subplots_adjust(bottom=bottom_margin)
         plt.tight_layout()
         plt.tight_layout()
@@ -1820,9 +1953,9 @@ if __name__ == '__main__':
     # return pvc, fig, ax
 
 
-if __name__ == '__main__':
-    main_example()
-    # complex_example()
+# if __name__ == '__main__':
+#     # main_example()
+#     pvc, fig, ax = complex_example()
 
 
 
