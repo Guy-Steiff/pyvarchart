@@ -452,7 +452,7 @@ class PyVarChart:
 
     Methods:
         analyze(pd_data: pd.DataFrame) -> pd.DataFrame:
-            Generate a variability chart from the provided DataFrame.
+            Generates a variability chart from the provided DataFrame.
             returns the processed DataFrame used for plotting.
             saves the processed DataFrame in self.pd_data_processed for later use.
             also saves other dataframe and variables useful for plotting in self.
@@ -819,27 +819,32 @@ class PyVarChart:
         value_to_color_key = self.value_to_color_key
 
         # inherit only relevant instance variables
-        label_spacing = self.label_spacing
+        # require applying analysis before changing:
         str_yaxis_var_name = self.str_yaxis_var_name
         lst_xaxis_var_names = self.lst_xaxis_var_names
         str_legend = self.str_legend
+        lst_show_group_means = self.lst_show_group_means
+
+        # reapplying analysis isn't required for the following variables:
+        label_spacing = self.label_spacing
         int_jitter_points = self.int_jitter_points
         int_boxplots = self.int_boxplots
         int_show_points = self.int_show_points
         int_marker_size = self.int_marker_size
-        # str_marker_theme = self.str_marker_theme
         str_color_theme = self.str_color_theme
-        # int_continuous_scale = self.int_continuous_scale
         int_reverse_color_scheme = self.int_reverse_color_scheme
         int_show_cell_means = self.int_show_cell_means
-        lst_show_group_means = self.lst_show_group_means
         int_show_grand_mean = self.int_show_grand_mean
         int_frame_size_x = self.int_frame_size_x
         int_frame_size_y = self.int_frame_size_y
         str_title = self.str_title
-        # dict_xaxis_orderings = self.dict_xaxis_orderings
         lst_rotation = self.lst_rotation
         lst_xaxis_font_size = self.lst_xaxis_font_size
+
+        # aren't required for plotting (only for analysis):
+        # str_marker_theme = self.str_marker_theme
+        # int_continuous_scale = self.int_continuous_scale
+        # dict_xaxis_orderings = self.dict_xaxis_orderings
 
         if lst_rotation is None:
             lst_rotation = ['Horizontal'] * len(lst_xaxis_var_names)
@@ -1028,6 +1033,7 @@ class PyVarChart:
         ax.set_xlim(-0.5, len(unique_index_order) - 0.5)
         f_ylim_min = pd_data[str_yaxis_var_name].min()
         f_ylim_max = pd_data[str_yaxis_var_name].max()
+        # set limits at 1% above the absolute max and below the absolute min
         ax.set_ylim(f_ylim_min * 0.99 if f_ylim_min > 0 else f_ylim_min * 1.01,
                     f_ylim_max * 1.01 if f_ylim_max > 0 else f_ylim_max * 0.99)
 

@@ -34,7 +34,7 @@ def main():
         lst_xaxis_var_names=['chip', 'channel'],
         str_legend='condition',
         int_show_cell_means=1,
-        int_frame_size_x=10,
+        int_frame_size_x=8,
         int_frame_size_y=6,
         str_title='Quick Start Example'
     )

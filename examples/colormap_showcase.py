@@ -54,22 +54,21 @@ def main():
         ('coolwarm', 'Diverging - Cool to warm', 'colormap_coolwarm.png'),
         ('tab10_r', 'Reversed with _r suffix', 'colormap_tab10_reversed.png'),
     ]
-
+    pvc = PyVarChart(
+        str_yaxis_var_name='value',
+        lst_xaxis_var_names=['category', 'subcategory'],
+        str_legend='subcategory',
+        int_frame_size_x=8,
+        int_frame_size_y=6,
+        int_marker_size=10,
+    )
+    pvc.analyze(pd_data)
     for i, (cmap_name, description, filename) in enumerate(examples, start=1):
         print(f"\n{i}. {description}")
         print(f"   Colormap: '{cmap_name}'")
-
-        pvc = PyVarChart(
-            str_yaxis_var_name='value',
-            lst_xaxis_var_names=['category', 'subcategory'],
-            str_legend='subcategory',
-            str_color_theme=cmap_name,
-            str_title=f'{description} ({cmap_name})',
-            int_frame_size_x=8,
-            int_frame_size_y=6,
-            int_marker_size=10,
-        )
-        pvc.analyze(pd_data)
+        pvc.str_color_theme=cmap_name
+        pvc.str_title=f'{description} ({cmap_name})'
+        # pvc.analyze(pd_data) # not required, the change str_color_scheme is plot exclusive
         fig, ax = pvc.plot(i)
         fig.savefig(filename, dpi=100, bbox_inches='tight')
         plt.close(i)
@@ -78,18 +77,10 @@ def main():
     # Demonstrate color reversal with parameter
     print(f"\n{len(examples) + 1}. Color Reversal Demo")
     print("   Using int_reverse_color_scheme=1")
-    pvc_rev = PyVarChart(
-        str_yaxis_var_name='value',
-        lst_xaxis_var_names=['category', 'subcategory'],
-        str_legend='subcategory',
-        str_color_theme='viridis',
-        int_reverse_color_scheme=1,  # Reverse the colormap
-        str_title='Reversed viridis (using parameter)',
-        int_frame_size_x=8,
-        int_frame_size_y=6,
-        int_marker_size=10,
-    )
-    pvc.analyze(pd_data)
+    pvc.str_color_theme='viridis'
+    pvc.int_reverse_color_scheme=1  # Reverse the colormap
+    pvc.str_title='Reversed viridis (using parameter)'
+    # pvc.analyze(pd_data) # not required, the change str_color_scheme is plot exclusive
     fig_rev, ax_rev = pvc.plot(len(examples) + 1)
     fig_rev.savefig('colormap_viridis_reversed_param.png', dpi=100, bbox_inches='tight')
     plt.close(len(examples) + 1)

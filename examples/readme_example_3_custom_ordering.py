@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import matplotlib.pyplot as plt
-# plt.switch_backend('agg')  # Non-interactive backend
+plt.switch_backend('agg')  # Non-interactive backend
 
 from pyvarchart import PyVarChart
 import pandas as pd
@@ -89,6 +89,7 @@ def main():
 
     # Save
     fig.savefig('readme_example_3_custom_ordering.png', dpi=100, bbox_inches='tight')
+    plt.close(1)
     print("✓ Example 3 (Custom Ordering) saved to readme_example_3_custom_ordering.png")
 
 

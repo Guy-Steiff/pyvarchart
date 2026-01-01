@@ -72,15 +72,15 @@ def main():
         str_color_theme='viridis',
         int_continuous_scale=0,  # Disabled - treats as categorical
         str_title='Categorical Mode: All Values Shown',
-        int_frame_size_x=10,
-        int_frame_size_y=8,
+        int_frame_size_x=8,
+        int_frame_size_y=6,
         int_marker_size=8,
     )
 
     # Generate chart
     pvc1.analyze(pd_data)
     fig1, ax1 = pvc1.plot(1)
-    fig1.savefig('continuous_scale_OFF.png', dpi=150, bbox_inches='tight')
+    fig1.savefig('continuous_scale_OFF.png', dpi=100, bbox_inches='tight')
     plt.close(1)
     print("   ✓ Saved to continuous_scale_OFF.png")
 
@@ -97,14 +97,14 @@ def main():
         str_color_theme='viridis',
         int_continuous_scale=1,  # Auto-select 5-6 representative values
         str_title='Continuous Mode: 5-6 Representative Values',
-        int_frame_size_x=10,
-        int_frame_size_y=8,
+        int_frame_size_x=8,
+        int_frame_size_y=6,
         int_marker_size=8,
     )
 
     pvc2.analyze(pd_data)
     fig2, ax2 = pvc2.plot(2)
-    fig2.savefig('continuous_scale_ON.png', dpi=150, bbox_inches='tight')
+    fig2.savefig('continuous_scale_ON.png', dpi=100, bbox_inches='tight')
     plt.close(2)
     print("   ✓ Saved to continuous_scale_ON.png")
     print("   ✓ Legend shows ~6 values (much cleaner!)")
@@ -119,14 +119,14 @@ def main():
         str_color_theme='plasma',
         int_continuous_scale=1,
         str_title='Continuous Scale: Plasma Colormap',
-        int_frame_size_x=10,
-        int_frame_size_y=8,
+        int_frame_size_x=8,
+        int_frame_size_y=6,
         int_marker_size=8,
     )
 
     pvc3.analyze(pd_data)
     fig3, ax3 = pvc3.plot(3)
-    fig3.savefig('continuous_scale_plasma.png', dpi=150, bbox_inches='tight')
+    fig3.savefig('continuous_scale_plasma.png', dpi=100, bbox_inches='tight')
     plt.close(3)
     print("   ✓ Saved to continuous_scale_plasma.png")
 
@@ -141,14 +141,14 @@ def main():
         str_color_theme='coolwarm',  # Blue=cold, Red=hot
         int_continuous_scale=1,
         str_title='Temperature Analysis (coolwarm)',
-        int_frame_size_x=10,
-        int_frame_size_y=8,
+        int_frame_size_x=8,
+        int_frame_size_y=6,
         int_marker_size=10,
     )
 
     pvc4.analyze(pd_data)
     fig4, ax4 = pvc4.plot(4)
-    fig4.savefig('continuous_scale_coolwarm.png', dpi=150, bbox_inches='tight')
+    fig4.savefig('continuous_scale_coolwarm.png', dpi=100, bbox_inches='tight')
     plt.close(4)
     print("   ✓ Saved to continuous_scale_coolwarm.png")
 
@@ -178,7 +178,7 @@ def main():
 
     pvc5.analyze(pd_data)
     fig5, ax5 = pvc5.plot(5)
-    fig5.savefig('continuous_scale_auto_revert.png', dpi=150, bbox_inches='tight')
+    fig5.savefig('continuous_scale_auto_revert.png', dpi=100, bbox_inches='tight')
     plt.close(5)
     print("   ✓ Saved to continuous_scale_auto_revert.png")
     print("   ✓ Automatically reverted to categorical (3 string values)")

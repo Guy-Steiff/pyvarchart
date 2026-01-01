@@ -73,26 +73,30 @@ matplotlib >= 3.2.0
 import pandas as pd
 from pyvarchart import PyVarChart
 
-# Load your data
-df = pd.DataFrame({
+# Your data
+data = {
     'measurement': [10, 15, 20, 12, 18, 22],
     'chip': [0, 0, 0, 1, 1, 1],
     'channel': ['A', 'A', 'A', 'B', 'B', 'B'],
     'condition': ['X', 'Y', 'X', 'Y', 'X', 'Y']
-})
+}
+df = pd.DataFrame(data)
 
 # Create chart
 pvc = PyVarChart(
     str_yaxis_var_name='measurement',
     lst_xaxis_var_names=['chip', 'channel'],
     str_legend='condition',
-    int_show_cell_means=1
+    int_show_cell_means=1,
+    int_frame_size_x=8,
+    int_frame_size_y=6,
+    str_title='Quick Start Example'
 )
 
 # Analyze and plot
 pvc.analyze(df)
 fig, ax = pvc.plot(1)
-fig.savefig('my_chart.png')
+fig.savefig('my_chart.png', dpi=100, bbox_inches='tight')
 ```
 
 **Output:**
@@ -124,7 +128,6 @@ This separation allows you to:
 | `str_legend` | Column for color/marker differentiation | `'temperature'` |
 | `dict_xaxis_orderings` | Custom sort order for categories | `{'freq': [1950, 2535, 3625]}` |
 
----
 
 ## Complete Feature Guide
 
@@ -325,7 +328,7 @@ pvc = PyVarChart(
 import pandas as pd
 from pyvarchart import PyVarChart
 
-# Load RF test data (example structure)
+# Load RF test data
 df = pd.read_csv('rf_test_results.csv')
 # Columns: pin_dbm, tx0_pga_gain, freq, trx_and_sx, standard_and_band, 
 #          offset_mhz, temp, nf_db
@@ -333,8 +336,8 @@ df = pd.read_csv('rf_test_results.csv')
 pvc = PyVarChart(
     # Core configuration
     str_yaxis_var_name='nf_db',
-    lst_xaxis_var_names=['pin_dbm', 'tx0_pga_gain', 'freq', 
-                         'trx_and_sx', 'standard_and_band', 'offset_mhz'],
+    lst_xaxis_var_names=['pin_dbm', 'tx0_pga_gain', 'freq',
+                         'standard_and_band', 'offset_mhz'],
     str_legend='temp',
     
     # Visual customization
@@ -347,29 +350,27 @@ pvc = PyVarChart(
     int_boxplots=1,
     int_show_points=1,
     int_show_cell_means=1,
-    lst_show_group_means=['tx0_pga_gain'],  # Show gain-level means
+    lst_show_group_means=['tx0_pga_gain'],
     int_show_grand_mean=1,
     
     # Layout
-    int_frame_size_x=20,
-    int_frame_size_y=10,
-    label_spacing=[0.025, 0.06, 0.07, 0.28, 0.02, 0.025],
-    lst_rotation=['Horizontal', 'Horizontal', 'Horizontal', 
-                  'Horizontal', 'Vertical', 'Horizontal'],
+    int_frame_size_x=16,
+    int_frame_size_y=8,
+    label_spacing=[0.06, 0.06, 0.28, 0.06, 0.03],
+    lst_rotation=['Horizontal', 'Horizontal', 'Horizontal', 'Vertical', 'Horizontal'],
     
     # Custom ordering
     dict_xaxis_orderings={
-        'freq': [1950.0, 836.5, 2535.0, 897.5, 3625.0],
         'temp': [-30, 25, 85]
     },
     
-    str_title='RF Noise Figure Variability Analysis'
+    str_title='Example 1: RF Noise Figure Variability Analysis'
 )
 
 # Analyze and plot
 pvc.analyze(df)
 fig, ax = pvc.plot(1)
-fig.savefig('rf_analysis.png', dpi=300, bbox_inches='tight')
+fig.savefig('rf_analysis.png', dpi=100, bbox_inches='tight')
 ```
 
 **Output:**
@@ -377,14 +378,14 @@ fig.savefig('rf_analysis.png', dpi=300, bbox_inches='tight')
 ![RF Testing Example](examples/readme_example_1_rf_testing.png)
 
 *This example showcases:*
-- 6-level hierarchical x-axis grouping
+- 5-level hierarchical x-axis grouping
 - Color-coded legend for temperature conditions
 - Boxplots showing data distribution
 - Cell means (black horizontal lines)
 - Group means for tx0_pga_gain (blue dashed lines)
 - Grand mean (black dotted line)
 - Vertical labels for long category names
-- Custom ordering of frequencies and temperatures
+- Custom ordering of temperatures
 
 ### Example 2: Continuous Scale for Power Measurements
 
@@ -401,11 +402,19 @@ pvc = PyVarChart(
     
     int_boxplots=0,  # Hide boxplots
     int_show_points=1,
-    int_show_cell_means=1
+    int_show_cell_means=1,
+    int_jitter_points=1,
+    int_marker_size=10,
+    
+    int_frame_size_x=12,
+    int_frame_size_y=7,
+    
+    str_title='Example 2: Continuous Scale - Power Output vs Input Power'
 )
 
 pvc.analyze(df)
 fig, ax = pvc.plot(1)
+fig.savefig('power_analysis.png', dpi=100, bbox_inches='tight')
 ```
 
 **Output:**
@@ -425,20 +434,31 @@ fig, ax = pvc.plot(1)
 pvc = PyVarChart(
     str_yaxis_var_name='yield_percent',
     lst_xaxis_var_names=['production_line', 'shift', 'date'],
+    str_legend='operator',
     
     # Custom order: prioritize problem areas
     dict_xaxis_orderings={
         'production_line': ['Line_C', 'Line_A', 'Line_B'],  # Worst first
-        'shift': ['Night', 'Evening', 'Day']
+        'shift': ['Night', 'Evening', 'Day']  # Worst first
     },
     
     int_boxplots=1,
     int_show_points=0,  # Hide individual points, show only boxplots
-    str_title='Production Yield by Line, Shift, and Date'
+    int_marker_size=8,
+    
+    int_frame_size_x=12,
+    int_frame_size_y=7,
+    
+    # Layout
+    label_spacing=[0.06, 0.25, 0.06],
+    lst_rotation=['Horizontal', 'Horizontal', 'Vertical'],
+    
+    str_title='Example 3: Production Yield by Line, Shift, and Date'
 )
 
 pvc.analyze(df)
 fig, ax = pvc.plot(1)
+fig.savefig('yield_analysis.png', dpi=100, bbox_inches='tight')
 ```
 
 **Output:**
@@ -450,6 +470,451 @@ fig, ax = pvc.plot(1)
 - Boxplots without individual points for cleaner visualization
 - 3-level hierarchical grouping
 - Easy identification of low-performing production lines and shifts
+- Vertical label rotation for dates
+
+---
+
+## More Examples
+
+### Basic Example: Simple variability chart with minimal configuration - perfect for getting started.
+```python
+# Sample data (smaller subset for basic example)
+str_data = ('chip, channel, lane, core, cmp, trim_read\n'
+            '0   , 2      , I   , 0   , 0  , 159\n'
+            '0   , 2      , I   , 0   , 1  , 136\n'
+            '0   , 2      , I   , 0   , 2  , 167\n'
+            '0   , 2      , I   , 0   , 3  , 139\n'
+            '0   , 2      , I   , 0   , 4  , 160\n'
+            '0   , 2      , I   , 1   , 0  , 167\n'
+            '0   , 2      , I   , 1   , 1  , 130\n'
+            '0   , 2      , Q   , 0   , 0  , 142\n'
+            '0   , 2      , Q   , 0   , 1  , 122\n'
+            '0   , 2      , Q   , 0   , 2  , 116\n'
+            '0   , 2      , Q   , 1   , 0  , 164\n'
+            '0   , 2      , Q   , 1   , 1  , 138'.replace(' ', ''))
+pd_data = pd.read_csv(StringIO(str_data))
+# Create basic variability chart
+pvc = PyVarChart(
+    str_yaxis_var_name='trim_read',
+    lst_xaxis_var_names=['chip', 'channel', 'lane', 'core', 'cmp'],
+    str_color_theme='Blue to Green to Red',
+    str_legend='lane',
+    str_title='Basic Variability Chart Example',
+    int_frame_size_x=10,
+    int_frame_size_y=6,
+)
+
+# Generate chart
+pvc.analyze(pd_data)
+fig, ax = pvc.plot(1)
+ax.set_ylim(0, 200)
+```
+
+![Basic Example](examples/basic_example.png)
+
+**Features:** 5-level hierarchical grouping, cell means, basic styling
+
+**See:** `examples/basic_example.py` for complete code
+
+---
+
+### Advanced Example: Demonstrates advanced features including custom spacing, jittering, and color themes.
+```python
+# Full sample data from main_example
+str_data = ('chip, channel, lane, core, cmp, trim_read\n'
+            '0   , 2      , I   , 0   , 0  , 159\n'
+            '0   , 2      , I   , 0   , 1  , 136\n'
+            '0   , 2      , I   , 0   , 2  , 167\n'
+            '0   , 2      , I   , 0   , 3  , 139\n'
+            '0   , 2      , I   , 0   , 4  , 160\n'
+            '0   , 2      , I   , 0   , 5  , 152\n'
+            '0   , 2      , I   , 1   , 0  , 167\n'
+            '0   , 2      , I   , 1   , 1  , 130\n'
+            '0   , 2      , I   , 1   , 2  , 143\n'
+            '0   , 2      , I   , 1   , 3  , 158\n'
+            '0   , 2      , I   , 1   , 4  , 142\n'
+            '0   , 2      , I   , 1   , 5  , 56\n'
+            '0   , 2      , Q   , 0   , 0  , 142\n'
+            '0   , 2      , Q   , 0   , 1  , 122\n'
+            '0   , 2      , Q   , 0   , 2  , 116\n'
+            '0   , 2      , Q   , 0   , 3  , 135\n'
+            '0   , 2      , Q   , 0   , 4  , 96\n'
+            '0   , 2      , Q   , 0   , 5  , 130\n'
+            '0   , 2      , Q   , 1   , 0  , 164\n'
+            '0   , 2      , Q   , 1   , 1  , 138\n'
+            '0   , 2      , Q   , 1   , 2  , 168\n'
+            '0   , 2      , Q   , 1   , 3  , 148\n'
+            '0   , 2      , Q   , 1   , 4  , 60\n'
+            '0   , 2      , Q   , 1   , 5  , 135'.replace(' ', ''))
+pd_data = pd.read_csv(StringIO(str_data))
+
+# Create advanced chart with all features
+pvc = PyVarChart(
+    # Custom label spacing per level
+    label_spacing=[0.10, 0.08, 0.06, 0.05, 0.04],
+
+    # Data configuration
+    str_yaxis_var_name='trim_read',
+    lst_xaxis_var_names=['chip', 'channel', 'lane', 'core', 'cmp'],
+    str_legend='lane',
+
+    # Visual styling
+    int_jitter_points=1,
+    int_marker_size=7,
+    str_marker_theme='Default',
+    str_color_theme='Blue to Green to Red',
+
+    # Layout
+    str_title='trim_read Variability Across Configs - Advanced Example',
+    int_frame_size_x=10,
+    int_frame_size_y=6,
+
+    # Custom ordering (reversed)
+    dict_xaxis_orderings={'cmp': [5, 4, 3, 2, 1, 0]},
+
+    # Label control
+    lst_rotation=['Horizontal', 'Horizontal', 'Vertical', 'Vertical', 'Horizontal'],
+    lst_xaxis_font_size=[11, 10, 9, 8, 9],
+)
+
+# Generate chart
+pvc.analyze(pd_data)
+fig, ax = pvc.plot(1)
+plt.title(f'Advanced Example\n'
+          f'str_legend={pvc.str_legend}, str_yaxis_var_name={pvc.str_yaxis_var_name}, '
+          f'int_jitter_points={pvc.int_jitter_points}, int_boxplots={pvc.int_boxplots}, int_show_points={pvc.int_show_points}\n'
+          f'str_color_theme={pvc.str_color_theme}, int_continuous_scale={pvc.int_continuous_scale}, '
+          f'int_reverse_color_scheme={pvc.int_reverse_color_scheme}, \n'
+          f'int_show_cell_means={pvc.int_show_cell_means}, '
+          f'lst_show_group_means={pvc.lst_show_group_means}, int_show_grand_mean={pvc.int_show_grand_mean}')
+ax.set_ylim(0, 255)
+plt.tight_layout()
+```
+
+![Advanced Example](examples/advanced_example.png)
+
+**Features:** Custom label spacing, point jittering, custom ordering, viridis colormap, 5 grouping levels
+
+**See:** `examples/advanced_example.py` for complete code
+
+---
+
+### Complex Example: Full-featured RF testing analysis with 6 levels of hierarchical grouping.
+```python
+# data available in examples/complex_example.py
+pd_data = pd.read_csv(StringIO(str_data))
+pvc = PyVarChart(
+    label_spacing=[0.025, 0.06, 0.07, 0.28, 0.02, 0.025], # note the larger 4th level spacing for vertical label
+    str_yaxis_var_name='nf_db',
+    lst_xaxis_var_names=['pin_dbm', 'tx0_pga_gain', 'freq', 'trx_and_sx', 'standard_and_band', 'offset_mhz'],
+    str_legend='temp',
+    int_jitter_points=1,
+    int_boxplots=1,
+    int_show_points=1,
+    int_marker_size=8,
+    str_marker_theme='Default',
+    str_color_theme='blue_to_green_to_red',
+    str_title='Sample RF PyVarChart',
+    int_continuous_scale=0,
+    int_reverse_color_scheme=0,
+    int_show_cell_means=1,
+    lst_show_group_means=['tx0_pga_gain'],
+    int_show_grand_mean=1,
+    int_frame_size_x=17,
+    int_frame_size_y=10,
+    dict_xaxis_orderings={'freq': np.sort(pd_data['freq'].unique()).tolist()},
+    lst_rotation=['Horizontal', 'Horizontal', 'Horizontal', 'Horizontal', 'Vertical', 'Horizontal'],
+    lst_xaxis_font_size=[10, 10, 10, 10, 10, 10],
+)
+# Generate chart
+pvc.analyze(pd_data)
+fig, ax = pvc.plot(1)
+plt.title(f'Sample RF PyVarChart - Complex Example\n'
+          f'str_legend={pvc.str_legend}, str_yaxis_var_name={pvc.str_yaxis_var_name}, '
+          f'int_jitter_points={pvc.int_jitter_points}, int_boxplots={pvc.int_boxplots}, int_show_points={pvc.int_show_points}, '
+          f'str_color_theme={pvc.str_color_theme}, int_continuous_scale={pvc.int_continuous_scale},\n'
+          f'int_reverse_color_scheme={pvc.int_reverse_color_scheme}, int_show_cell_means={pvc.int_show_cell_means}, '
+          f'lst_show_group_means={pvc.lst_show_group_means}, int_show_grand_mean={pvc.int_show_grand_mean}')
+plt.tight_layout()
+```
+![Complex Example](examples/complex_example.png)
+
+**Features:** 6-level hierarchical grouping, vertical label rotation, custom ordering, continuous scale legend, comprehensive statistical overlays
+
+**See:** `examples/complex_example.py` for complete code
+
+---
+
+### Continuous Scale Feature
+
+PyVarChart's continuous scale feature automatically simplifies legends when dealing with many continuous numeric values. Instead of showing every unique value (which creates cluttered legends), it intelligently selects 5-6 representative values and uses smooth color gradient interpolation.
+
+#### When to Use Continuous Scale
+
+- **Enable (`int_continuous_scale=1`)** when you have many (>10) numeric legend values
+- **Disable (`int_continuous_scale=0`)** for discrete categories or when you need to see all values
+- **Auto-detection:** Automatically reverts to categorical mode if any string values are detected
+
+#### Comparison: Categorical vs Continuous
+
+**Without Continuous Scale (Categorical Mode):**
+
+Shows ALL unique values - can create very cluttered legends when you have many data points.
+```python
+pvc1 = PyVarChart(
+    str_yaxis_var_name='measurement',
+    lst_xaxis_var_names=['location', 'operator'],
+    str_legend='temperature',
+    str_color_theme='viridis',
+    int_continuous_scale=0,  # Disabled - treats as categorical
+    str_title='Categorical Mode: All Values Shown',
+    int_frame_size_x=8,
+    int_frame_size_y=6,
+    int_marker_size=8,
+)
+
+# Generate chart
+pvc1.analyze(pd_data)
+fig1, ax1 = pvc1.plot(1)
+```
+![Continuous Scale OFF](examples/continuous_scale_OFF.png)
+
+**With Continuous Scale (Enabled):**
+
+Auto-selects 5-6 representative values using percentiles (0%, 20%, 40%, 60%, 80%, 100%). Much cleaner!
+```python
+pvc2 = PyVarChart(
+    str_yaxis_var_name='measurement',
+    lst_xaxis_var_names=['location', 'operator'],
+    str_legend='temperature',
+    str_color_theme='viridis',
+    int_continuous_scale=1,  # Auto-select 5-6 representative values
+    str_title='Continuous Mode: 5-6 Representative Values',
+    int_frame_size_x=8,
+    int_frame_size_y=6,
+    int_marker_size=8,
+)
+
+pvc2.analyze(pd_data)
+fig2, ax2 = pvc2.plot(2)
+```
+![Continuous Scale ON](examples/continuous_scale_ON.png)
+
+#### How It Works
+
+```python
+pvc = PyVarChart(
+    str_yaxis_var_name='measurement',
+    lst_xaxis_var_names=['location', 'operator'],
+    str_legend='temperature',  # Continuous numeric values
+    int_continuous_scale=1,    # Enable continuous scale
+    str_color_theme='viridis',
+    int_frame_size_x=10,
+    int_frame_size_y=8
+)
+
+pvc.analyze(df)
+fig, ax = pvc.plot(1)
+```
+
+**Benefits:**
+- Cleaner, more readable legends
+- Smooth color gradients across the data range
+- Representative values include min, max, and key percentiles
+- Automatic mode detection (reverts to categorical for strings)
+
+#### Colormap Examples with Continuous Scale
+
+**Plasma (Sequential):**
+```python
+pvc3 = PyVarChart(
+    str_yaxis_var_name='measurement',
+    lst_xaxis_var_names=['location', 'operator'],
+    str_legend='temperature',
+    str_color_theme='plasma',
+    int_continuous_scale=1,
+    str_title='Continuous Scale: Plasma Colormap',
+    int_frame_size_x=8,
+    int_frame_size_y=6,
+    int_marker_size=8,
+)
+
+pvc3.analyze(pd_data)
+fig3, ax3 = pvc3.plot(3)
+```
+![Continuous Scale Plasma](examples/continuous_scale_plasma.png)
+
+**Coolwarm (Diverging - Blue=Cold, Red=Hot):**
+```python
+pvc4 = PyVarChart(
+    str_yaxis_var_name='measurement',
+    lst_xaxis_var_names=['location', 'operator'],
+    str_legend='temperature',
+    str_color_theme='coolwarm',  # Blue=cold, Red=hot
+    int_continuous_scale=1,
+    str_title='Temperature Analysis (coolwarm)',
+    int_frame_size_x=8,
+    int_frame_size_y=6,
+    int_marker_size=10,
+)
+
+pvc4.analyze(pd_data)
+fig4, ax4 = pvc4.plot(4)
+```
+![Continuous Scale Coolwarm](examples/continuous_scale_coolwarm.png)
+
+#### Auto-Revert Behavior
+
+When `int_continuous_scale=1` is set but string values are detected, the system automatically reverts to categorical mode:
+```python
+pvc5 = PyVarChart(
+    str_yaxis_var_name='measurement',
+    lst_xaxis_var_names=['location', 'operator'],
+    str_legend='operator',
+    str_color_theme='Set1',
+    int_continuous_scale=1,  # Requesting continuous, but will auto-revert
+    str_title='Auto-Reverts to Categorical (strings detected)',
+    int_frame_size_x=8,
+    int_frame_size_y=6,
+    int_marker_size=10,
+)
+
+pvc5.analyze(pd_data)
+fig5, ax5 = pvc5.plot(5)
+```
+![Continuous Scale Auto Revert](examples/continuous_scale_auto_revert.png)
+
+**See:** `examples/continuous_scale_demo.py` for complete demonstration code
+
+---
+
+### Colormap Showcase
+
+PyVarChart supports all matplotlib colormaps (100+ options) plus custom gradients. Choose the right colormap for your data type:
+
+- **Qualitative:** For categorical data with no ordering (tab10, Set1, Dark2, Pastel1)
+- **Sequential:** For ordered data from low to high (viridis, plasma, Blues, Greens)
+- **Diverging:** For data with a meaningful midpoint (RdYlBu, coolwarm, seismic)
+
+#### Custom Gradient
+
+The default `'blue_to_green_to_red'` provides an intuitive low→medium→high visualization:
+```python
+pvc.str_color_theme='blue_to_green_to_red'
+plt.plot(1)
+```
+![Custom Gradient](examples/colormap_custom_gradient.png)
+
+#### Qualitative Colormaps
+
+Perfect for categorical data where categories have no inherent order:
+
+**Tableau 10 (tab10):**
+```python
+pvc.str_color_theme='tab10'
+plt.plot(1)
+```
+![Tab10 Colormap](examples/colormap_tab10.png)
+
+**ColorBrewer Set1:**
+```python
+pvc.str_color_theme='Set1'
+plt.plot(1)
+```
+![Set1 Colormap](examples/colormap_set1.png)
+
+**Dark2 (High Contrast):**
+```python
+pvc.str_color_theme='Dark2'
+plt.plot(1)
+```
+![Dark2 Colormap](examples/colormap_dark2.png)
+
+**Pastel1 (Soft Colors):**
+```python
+pvc.str_color_theme='Pastel1'
+plt.plot(1)
+```
+![Pastel1 Colormap](examples/colormap_pastel1.png)
+
+#### Sequential Colormaps
+
+Ideal for ordered/continuous data. These are perceptually uniform and colorblind-friendly:
+
+**Viridis:**
+```python
+pvc.str_color_theme='Viridis'
+plt.plot(1)
+```
+![Viridis Colormap](examples/colormap_viridis.png)
+
+**Plasma:**
+```python
+pvc.str_color_theme='Plasma'
+plt.plot(1)
+```
+![Plasma Colormap](examples/colormap_plasma.png)
+
+#### Diverging Colormaps
+
+Best when data has a meaningful center point (e.g., temperature, correlation):
+
+**Red-Yellow-Blue (RdYlBu):**
+```python
+pvc.str_color_theme='RdYlBu'
+plt.plot(1)
+```
+![RdYlBu Colormap](examples/colormap_rdylbu.png)
+
+**Coolwarm:**
+```python
+pvc.str_color_theme='Coolwarm'
+plt.plot(1)
+```
+![Coolwarm Colormap](examples/colormap_coolwarm.png)
+
+#### Reversing Colormaps
+
+Two ways to reverse any colormap:
+
+**Method 1: Add `_r` suffix**
+```python
+pvc.str_color_theme='tab10_r'  # Reversed tab10
+plt.plot(1)
+```
+
+![Tab10 Reversed](examples/colormap_tab10_reversed.png)
+
+**Method 2: Use parameter**
+```python
+pvc.str_color_theme='viridis',
+pvc.int_reverse_color_scheme=1  # Reverse the colormap
+plt.plot(1)
+```
+
+![Viridis Reversed](examples/colormap_viridis_reversed_param.png)
+
+#### Usage
+
+```python
+pvc = PyVarChart(
+    str_yaxis_var_name='measurement',
+    lst_xaxis_var_names=['category', 'subcategory'],
+    str_legend='group',
+    str_color_theme='plasma',        # Any matplotlib colormap name
+    int_reverse_color_scheme=0,      # 0=normal, 1=reversed
+    int_frame_size_x=8,
+    int_frame_size_y=6
+)
+```
+
+**Available Colormaps:**
+- **Qualitative:** tab10, tab20, Set1, Set2, Set3, Pastel1, Pastel2, Dark2, Accent, Paired
+- **Sequential:** viridis, plasma, inferno, magma, cividis, Blues, Greens, Reds, Purples, Oranges, YlOrRd, YlOrBr, YlGn, YlGnBu, BuGn, BuPu, GnBu, PuBu, PuBuGn, PuRd, RdPu, OrRd
+- **Diverging:** RdYlBu, RdYlGn, RdBu, RdGy, PiYG, PRGn, PuOr, BrBG, coolwarm, seismic, bwr
+- **Custom:** blue_to_green_to_red (PyVarChart default)
+
+**See:** `examples/colormap_showcase.py` for complete colormap gallery generation code
 
 ---
 
@@ -502,6 +967,9 @@ Creates the matplotlib figure and axes with all configured visualizations.
 - **Returns:** Tuple of `(figure, axes)` objects for further customization
 - **Must call `analyze()` first**
 
+- **Can re-`plot()` without calling `analyze()` for the following:** `label_spacing`, `int_jitter_points`, `int_boxplots`, `int_show_points`, `int_marker_size`, `str_color_theme`, `int_reverse_color_scheme`, `int_show_cell_means`, `int_show_grand_mean`, `int_frame_size_x`, `int_frame_size_y`, `str_title`, `lst_rotation`, `lst_xaxis_font_size`
+
+
 ---
 
 ## Contributing
@@ -533,7 +1001,6 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 ## Acknowledgments
 
 - Built on [matplotlib](https://matplotlib.org/), [pandas](https://pandas.pydata.org/), and [numpy](https://numpy.org/)
-- Inspired by variability charts in statistical analysis tools
 
 ---
 
@@ -541,6 +1008,8 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 - **Repository:** https://github.com/Guy-Steiff/pyvarchart
 - **Issues:** https://github.com/Guy-Steiff/pyvarchart/issues
+- **Email:** guy.steiff-pvc@bytz.me
+- **About the author**: https://guysteiff.vercel.app/
 
 ---
 
