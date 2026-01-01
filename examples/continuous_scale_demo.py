@@ -6,11 +6,13 @@ This example shows how int_continuous_scale handles continuous legend values:
 - int_continuous_scale=1: Auto-selects 5-6 representative values with smooth gradient
 """
 
-import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend
-
-from pyvarchart import PyVarChart
 import pandas as pd
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyvarchart import PyVarChart
 import numpy as np
 
 
@@ -75,8 +77,11 @@ def main():
         int_marker_size=8,
     )
 
-    fig1, ax1 = pvc1.analyze(1, pd_data)
+    # Generate chart
+    pvc1.analyze(pd_data)
+    fig1, ax1 = pvc1.plot(1)
     fig1.savefig('continuous_scale_OFF.png', dpi=150, bbox_inches='tight')
+    plt.close(1)
     print("   ✓ Saved to continuous_scale_OFF.png")
 
     # Example 2: With continuous scale - auto-selects 5-6 values
@@ -97,8 +102,10 @@ def main():
         int_marker_size=8,
     )
 
-    fig2, ax2 = pvc2.analyze(2, pd_data)
+    pvc2.analyze(pd_data)
+    fig2, ax2 = pvc2.plot(2)
     fig2.savefig('continuous_scale_ON.png', dpi=150, bbox_inches='tight')
+    plt.close(2)
     print("   ✓ Saved to continuous_scale_ON.png")
     print("   ✓ Legend shows ~6 values (much cleaner!)")
 
@@ -117,8 +124,10 @@ def main():
         int_marker_size=8,
     )
 
-    fig3, ax3 = pvc3.analyze(3, pd_data)
+    pvc3.analyze(pd_data)
+    fig3, ax3 = pvc3.plot(3)
     fig3.savefig('continuous_scale_plasma.png', dpi=150, bbox_inches='tight')
+    plt.close(3)
     print("   ✓ Saved to continuous_scale_plasma.png")
 
     # Example 4: Continuous with coolwarm diverging colormap
@@ -137,8 +146,10 @@ def main():
         int_marker_size=10,
     )
 
-    fig4, ax4 = pvc4.analyze(4, pd_data)
+    pvc4.analyze(pd_data)
+    fig4, ax4 = pvc4.plot(4)
     fig4.savefig('continuous_scale_coolwarm.png', dpi=150, bbox_inches='tight')
+    plt.close(4)
     print("   ✓ Saved to continuous_scale_coolwarm.png")
 
     # Example 5: Auto-revert to categorical when strings present
@@ -156,7 +167,7 @@ def main():
     pvc5 = PyVarChart(
         str_yaxis_var_name='measurement',
         lst_xaxis_var_names=['location', 'operator'],
-        str_legend='category',
+        str_legend='operator',
         str_color_theme='Set1',
         int_continuous_scale=1,  # Requesting continuous, but will auto-revert
         str_title='Auto-Reverts to Categorical (strings detected)',
@@ -165,8 +176,10 @@ def main():
         int_marker_size=10,
     )
 
-    fig5, ax5 = pvc5.analyze(5, mixed_data)
+    pvc5.analyze(pd_data)
+    fig5, ax5 = pvc5.plot(5)
     fig5.savefig('continuous_scale_auto_revert.png', dpi=150, bbox_inches='tight')
+    plt.close(5)
     print("   ✓ Saved to continuous_scale_auto_revert.png")
     print("   ✓ Automatically reverted to categorical (3 string values)")
 

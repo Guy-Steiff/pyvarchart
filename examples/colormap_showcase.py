@@ -5,9 +5,11 @@ This example demonstrates how to use any matplotlib colormap with PyVarChart,
 including reversing colormaps using either the _r suffix or the parameter.
 """
 
-import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend for saving to file
-
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyvarchart import PyVarChart
 import pandas as pd
 from io import StringIO
@@ -67,9 +69,10 @@ def main():
             int_frame_size_y=6,
             int_marker_size=10,
         )
-
-        fig, ax = pvc.analyze(i, pd_data)
-        fig.savefig(filename, dpi=150, bbox_inches='tight')
+        pvc.analyze(pd_data)
+        fig, ax = pvc.plot(i)
+        fig.savefig(filename, dpi=100, bbox_inches='tight')
+        plt.close(i)
         print(f"   ✓ Saved to {filename}")
 
     # Demonstrate color reversal with parameter
@@ -86,8 +89,10 @@ def main():
         int_frame_size_y=6,
         int_marker_size=10,
     )
-    fig_rev, ax_rev = pvc_rev.analyze(len(examples) + 1, pd_data)
-    fig_rev.savefig('colormap_viridis_reversed_param.png', dpi=150, bbox_inches='tight')
+    pvc.analyze(pd_data)
+    fig_rev, ax_rev = pvc.plot(len(examples) + 1)
+    fig_rev.savefig('colormap_viridis_reversed_param.png', dpi=100, bbox_inches='tight')
+    plt.close(len(examples) + 1)
     print("   ✓ Saved to colormap_viridis_reversed_param.png")
 
     print("\n" + "=" * 60)

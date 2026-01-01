@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Basic PyVarChart example - simple usage."""
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import matplotlib
 matplotlib.use('Agg')  # Non-interactive backend for saving to file
 
@@ -39,12 +42,14 @@ def main():
     )
 
     # Generate chart
-    fig, ax = pvc.analyze(1, pd_data)
+    pvc.analyze(pd_data)
+    fig, ax = pvc.plot(1)
     ax.set_ylim(0, 200)
 
     # Save
-    fig.savefig('basic_example.png', dpi=150, bbox_inches='tight')
+    fig.savefig('basic_example.png', dpi=100, bbox_inches='tight')
     print("✓ Basic example saved to basic_example.png")
+    # plt.close(1)
 
 
 if __name__ == '__main__':

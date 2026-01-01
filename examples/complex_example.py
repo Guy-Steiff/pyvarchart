@@ -1,21 +1,15 @@
 import pandas as pd
-import sys
-sys.path.extend(['/media/gnew/Mech/Projects/pyvarchart'])
-from pyvarchart import PyVarChart
 import matplotlib.pyplot as plt
-import time
+plt.switch_backend('agg')
 import os
-# plt.switch_backend('agg')
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyvarchart import PyVarChart
 import numpy as np
 from io import StringIO
 
 
-if __name__ == '__main__':
-    str_root_results_folder = r"/media/gnew/Mech/results/pyvarchart/release_tests/"
-    str_timestamps = str(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
-    str_full_results_folder = os.path.join(str_root_results_folder, str_timestamps)
-    os.makedirs(str_full_results_folder, exist_ok=True)
-
+def main():
     str_data = (
         'skew_sn, skew, sn, temp, pin_dbm  , tx0_pga_gain, freq  , trx_and_sx, standard_and_band , offset_mhz  , nf_db  , snr_db  , pout_dbm  \n'
         'TT_3   , TT  , 3 , -30 , -12      , 4           , 1950.0, TX0_STX0  , 4G_FDD_Band01_DIV3, 1           , 38.207 , 82.032  , -12.875   \n'
@@ -690,15 +684,24 @@ if __name__ == '__main__':
         lst_rotation=['Horizontal', 'Horizontal', 'Horizontal', 'Horizontal', 'Vertical', 'Horizontal'],
         lst_xaxis_font_size=[10, 10, 10, 10, 10, 10],
     )
-    lst_xaxis_var_names = pvc.lst_xaxis_var_names
-    lst_rotation = pvc.lst_rotation
-    lst_xaxis_font_size = pvc.lst_xaxis_font_size
-    fig, ax = pvc.analyze(1, pd_data)
-    # plt.tight_layout()
+    # Generate chart
+    pvc.analyze(pd_data)
+    fig, ax = pvc.plot(1)
+    plt.title(f'Sample RF PyVarChart - Complex Example\n'
+              f'str_legend={pvc.str_legend}, str_yaxis_var_name={pvc.str_yaxis_var_name}, '
+              f'int_jitter_points={pvc.int_jitter_points}, int_boxplots={pvc.int_boxplots}, int_show_points={pvc.int_show_points}, '
+              f'str_color_theme={pvc.str_color_theme}, int_continuous_scale={pvc.int_continuous_scale},\n'
+              f'int_reverse_color_scheme={pvc.int_reverse_color_scheme}, int_show_cell_means={pvc.int_show_cell_means}, '
+              f'lst_show_group_means={pvc.lst_show_group_means}, int_show_grand_mean={pvc.int_show_grand_mean}')
+    plt.tight_layout()
 
     # Save with high quality
-    fig.savefig('complex_example.png', dpi=300, bbox_inches='tight')
+    fig.savefig('complex_example.png', dpi=100, bbox_inches='tight')
+    plt.close(1)
     print("✓ Complex example saved to complex_example.png")
     print(f"✓ Chart shows {len(pd_data)} data points")
     print(f"✓ Grouped by {len(pvc.lst_xaxis_var_names)} factors")
     print("✓ Features: custom spacing, jittering, custom ordering, color theme")
+
+if __name__ == '__main__':
+    main()

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Advanced PyVarChart example - all features enabled."""
 
-import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend for saving to file
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import matplotlib.pyplot as plt
+plt.switch_backend('Agg')  # Non-interactive backend for saving to file
 
 from pyvarchart import PyVarChart
 import pandas as pd
@@ -50,15 +53,15 @@ def main():
         str_legend='lane',
 
         # Visual styling
-        b_jitter_points=True,
+        int_jitter_points=1,
         int_marker_size=7,
         str_marker_theme='Default',
         str_color_theme='Blue to Green to Red',
 
         # Layout
         str_title='trim_read Variability Across Configs - Advanced Example',
-        int_frame_size_x=12,
-        int_frame_size_y=7,
+        int_frame_size_x=10,
+        int_frame_size_y=6,
 
         # Custom ordering (reversed)
         dict_xaxis_orderings={'cmp': [5, 4, 3, 2, 1, 0]},
@@ -69,11 +72,22 @@ def main():
     )
 
     # Generate chart
-    fig, ax = pvc.analyze(1, pd_data)
+    pvc.analyze(pd_data)
+    fig, ax = pvc.plot(1)
+    plt.title(f'Advanced Example\n'
+              f'str_legend={pvc.str_legend}, str_yaxis_var_name={pvc.str_yaxis_var_name}, '
+              f'int_jitter_points={pvc.int_jitter_points}, int_boxplots={pvc.int_boxplots}, int_show_points={pvc.int_show_points}\n'
+              f'str_color_theme={pvc.str_color_theme}, int_continuous_scale={pvc.int_continuous_scale}, '
+              f'int_reverse_color_scheme={pvc.int_reverse_color_scheme}, \n'
+              f'int_show_cell_means={pvc.int_show_cell_means}, '
+              f'lst_show_group_means={pvc.lst_show_group_means}, int_show_grand_mean={pvc.int_show_grand_mean}')
     ax.set_ylim(0, 255)
+    plt.tight_layout()
+
 
     # Save with high quality
-    fig.savefig('advanced_example.png', dpi=300, bbox_inches='tight')
+    fig.savefig('advanced_example.png', dpi=100, bbox_inches='tight')
+    plt.close(1)
     print("✓ Advanced example saved to advanced_example.png")
     print(f"✓ Chart shows {len(pd_data)} data points")
     print(f"✓ Grouped by {len(pvc.lst_xaxis_var_names)} factors")

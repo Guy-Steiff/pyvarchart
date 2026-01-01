@@ -1131,13 +1131,13 @@ def main_example() -> None:
         lst_xaxis_font_size=[10, 10, 10, 10, 10],
     )
     int_fig_num = 1
-    fig, ax = pvc.analyze(int_fig_num, pd_data)
+    pvc.analyze(pd_data)
+    fig, ax = pvc.plot(int_fig_num)
     ax.set_ylim(0, 255)
     # plt.tight_layout()
-    plt.show()
+    # plt.show()
 
-# def complex_example():
-if __name__ == '__main__':
+def complex_example():
     str_data = (
         'skew_sn, skew, sn, temp, pin_dbm  , tx0_pga_gain, freq  , trx_and_sx, standard_and_band , offset_mhz  , nf_db  , snr_db  , pout_dbm  \n'
         'TT_3   , TT  , 3 , -30 , -12      , 4           , 1950.0, TX0_STX0  , 4G_FDD_Band01_DIV3, 1           , 38.207 , 82.032  , -12.875   \n'
