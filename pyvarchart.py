@@ -166,6 +166,7 @@ def normalize_grouping_value(val: Any) -> Any:
     return val
 
 class ColorMapFactory:
+    """Factory class providing various colormap names for matplotlib."""
     def __init__(self):
         self.blue_to_green_to_red = 'blue_to_green_to_red'
         self.Accent = 'Accent'
@@ -355,6 +356,7 @@ class ColorMapFactory:
 
 class PyVarChart:
     """A variability chart creator for visualizing data across multiple categorical factors.
+       Allowing breaking down data by different variables to better characterize its nature.
 
     This class creates sophisticated variability charts with hierarchical x-axis grouping,
     customizable markers, colors, statistical overlays (means, boxplots), and legend support.
@@ -364,7 +366,8 @@ class PyVarChart:
     - Color-coded legend for categorical differentiation
     - Optional boxplots, cell means, group means, and grand mean overlays
     - Custom ordering of x-axis categories
-    - Jittering for overlapping points visualization
+    - Jittering for overlapping points visualization (jittering results in randomized horizontal positions, such that
+      subsequent calls result in slightly different graphs, however, the data is the same)
 
     Example Output Structure::
 
@@ -388,19 +391,23 @@ class PyVarChart:
 
     Args:
         label_spacing: Vertical spacing between hierarchical x-axis label levels.
-                      Can be a single float for uniform spacing, or a list of floats
-                      (one per x-axis level) for custom spacing per level. Default: 0.15
+                       Can be a single float for uniform spacing, or a list of floats
+                       (one per x-axis level) for custom spacing per level. Default: 0.15
+
         str_yaxis_var_name: Name of the column to plot on y-axis (must exist in DataFrame). Default: 'y_variable'
         lst_xaxis_var_names: List of column names for hierarchical x-axis grouping. Default: None (empty list)
+                             (str_yaxis_var_name mustn't be in lst_xaxis_var_names)
+
         str_legend: Optional column name for color/marker differentiation. Default: None
-        int_jitter_points: If True, adds horizontal jitter to overlapping points. Default: False
-        int_boxplots: Display mode - 0: points only, 1: points+boxes, 2: boxes only. Default: 1
+        int_jitter_points: If 1, adds horizontal jitter to overlapping points. Default: 0
+        int_boxplots: If 1 show boxplots for each x-axis group; if 0, hide them (show means/points only). Default: 1
         int_show_points: If 1, show individual data points; if 0, hide them (show means/boxplots only). Default: 1
-        int_marker_size: Size of markers in points. Default: 8
+        int_marker_size: Size of markers of points. Default: 8
         str_marker_theme: Marker style theme - 'Default' (circles) or 'Solid' (varied shapes). Default: 'Default'
 
         str_color_theme: Color palette - Default: 'blue_to_green_to_red'
-            possible values:
+            can be any of the matplotlib colormaps (https://matplotlib.org/stable/tutorials/colors/colormaps.html)
+            Popular values:
             Categories of Colormaps:
             Qualitative (best for categorical/legend data like yours):
             Accent, Dark2, Paired, Pastel1, Pastel2, Set1, Set2, Set3
@@ -413,24 +420,34 @@ class PyVarChart:
             Perceptual (modern, colorblind-friendly):
             viridis, plasma, inferno, magma, cividis, turbo
 
-            also, for plt.cm types, if added a '_r' postfix, it reverses the colormap
+            also, for plt.cm types, if added a '_r' postfix, it reverses the colormap (in most cases)
             reversing of the colormap can also be done by setting int_reverse_color_scheme=1 (which applies to the
-            cutom 'blue_to_green_to_red' theme as well)
+            custom 'blue_to_green_to_red' theme)
 
-        int_continuous_scale: If 1, treats legend as continuous scale with 5-6 representative values shown in legend.
-                             Representative values are automatically selected to include endpoints (min/max) and
-                             evenly distributed intermediate values (percentiles). Colors smoothly interpolate across range.
-                             If 0, treats legend as categorical (shows all unique discrete values).
-                             Automatically reverts to 0 if legend contains any non-numeric values. Default: 0
-        int_reverse_color_scheme: if 1, reverse the colorscheme intended for the points, else keep as they were
+        int_continuous_scale: If 1, "quantize the legend" - treats legend as continuous scale with 5-6 representative
+                              values shown in legend.
+                              Representative values are automatically selected to include endpoints (min/max) and
+                              evenly distributed intermediate values (percentiles). Colors smoothly interpolate across range.
+                              If 0, treats legend as categorical (shows all unique discrete values).
+                              Automatically reverts to 0 if legend contains any non-numeric values. Default: 0
+        int_reverse_color_scheme: if 1, reverse the colorscheme intended for the points, if 0 keep as they were. Default: 0
         int_show_cell_means: If 1, display horizontal lines at cell means. Default: 0
         lst_show_group_means: List of grouping variables to show means for. Default: None (empty list)
         int_show_grand_mean: If 1, display grand mean as horizontal dotted line. Default: 0
+
         int_frame_size_x: Figure width in inches. Default: 20
         int_frame_size_y: Figure height in inches. Default: 6
-        str_title: Optional title for the chart. Default: None
+
+        str_title: Optional title for the chart, can be changed with plt.title() post figure. Default: None
         dict_xaxis_orderings: Dict mapping column names to custom sort orders, e.g., {'cmp': [4,3,2,1,0]}. Default: None
-        lst_rotation: List of 'Horizontal' or 'Vertical' rotation for each x-axis level. Default: None (auto-vertical)
+                              if the dict entry doesn't contain all unique values found in the data column, the missing
+                              values are appended at the end in sorted order.
+                              if filtering those out is desired, use standard pandas DataFrame filtering prior to passing data to analyze().
+                              for example:
+                              if 'cmp' is an x-axis variable, and only cmp values 0-4 are desired, do:
+                                pvc.analyze(1, dataframe[dataframe['cmp'] < 5])
+        lst_rotation: List of 'Horizontal' or 'Vertical' rotation for each x-axis level. Default: None (auto-horizontal)
+                      use vertical for long string values or multidigit values, ensure the appropriate label_spacing is set.
         lst_xaxis_font_size: List of font sizes for each x-axis level. Default: None (uses matplotlib default)
 
     Example::
@@ -611,7 +628,7 @@ class PyVarChart:
         lst_xaxis_font_size = self.lst_xaxis_font_size
 
         if lst_rotation is None:
-            lst_rotation = ['Vertical'] * len(lst_xaxis_var_names)
+            lst_rotation = ['Horizontal'] * len(lst_xaxis_var_names)
 
         for col in lst_xaxis_var_names:
             # Normalize float grouping variables to int if whole number
@@ -733,13 +750,14 @@ class PyVarChart:
                 # Try to get colormap from matplotlib
                 # Check if user specified a reversed colormap with _r suffix
                 theme_name = str_color_theme
-                user_requested_reverse = theme_name.endswith('_r')
+                # user_requested_reverse = theme_name.endswith('_r')
 
-                if user_requested_reverse:
-                    # User explicitly requested reversed version
-                    base_theme_name = theme_name[:-2]  # Remove '_r'
-                else:
-                    base_theme_name = theme_name
+                # if user_requested_reverse:
+                #     # User explicitly requested reversed version
+                #     base_theme_name = theme_name[:-2]  # Remove '_r'
+                # else:
+                #     base_theme_name = theme_name
+                base_theme_name = theme_name
 
                 # Try to get the colormap
                 try:
@@ -748,11 +766,12 @@ class PyVarChart:
                     # Fallback to tab10 if colormap not found
                     print(f"Warning: Colormap '{str_color_theme}' not found. Falling back to 'blue_to_green_to_red'.")
                     cmap = mpl.colormaps['blue_to_green_to_red']
-                    user_requested_reverse = False
+                    # user_requested_reverse = False
 
                 # Apply reversal based on user_requested_reverse OR int_reverse_color_scheme
                 # If both are set, they cancel each other out (double reverse = original)
-                should_reverse = user_requested_reverse ^ (int_reverse_color_scheme == 1)  # XOR logic
+                # should_reverse = user_requested_reverse ^ (int_reverse_color_scheme == 1)  # XOR logic
+                should_reverse = int_reverse_color_scheme == 1
 
                 if should_reverse:
                     cmap = cmap.reversed()
@@ -949,6 +968,7 @@ class PyVarChart:
         bottom_margin = estimate_bottom_margin(len(lst_xaxis_var_names), lst_rotation, label_spacing)
         plt.subplots_adjust(bottom=bottom_margin)
         plt.tight_layout()
+        plt.tight_layout()
 
         return fig, ax
 
@@ -1003,8 +1023,8 @@ def main_example() -> None:
         str_legend='lane',  #'lane',
         int_jitter_points=1,
         int_show_points=1,
-        int_marker_size=7,
-        int_reverse_color_scheme=1,
+        int_marker_size=8,
+        int_reverse_color_scheme=0,
         lst_show_group_means=['core'],
         int_continuous_scale=0,
         int_show_cell_means=1,

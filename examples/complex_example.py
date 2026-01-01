@@ -694,6 +694,7 @@ if __name__ == '__main__':
     lst_rotation = pvc.lst_rotation
     lst_xaxis_font_size = pvc.lst_xaxis_font_size
     fig, ax = pvc.analyze(1, pd_data)
+    # plt.tight_layout()
 
     # Save with high quality
     fig.savefig('complex_example.png', dpi=300, bbox_inches='tight')
