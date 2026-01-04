@@ -125,7 +125,7 @@ dmypy.json
 # IDE
 .vscode/
 .idea/
-!.run/
+.run/
 *.swp
 *.swo
 *~
@@ -134,7 +134,7 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Project specific
+# Project specific - scratch/dev files
 outputs/
 uploads/
 static/index.html
@@ -143,7 +143,10 @@ pyvarchart_wrapper.py
 instructions.txt
 test_*.py
 verify_*.py
+
+# Exclude image files (but keep examples/)
 *.png
+!examples/*.png
 *.pdf
 *.svg
 

@@ -1,0 +1,21 @@
+# Include documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include requirements.txt
+
+# Include examples (but not generated PNG files)
+recursive-include examples *.py
+recursive-include examples *.md
+
+# Include tests
+recursive-include tests *.py
+recursive-include tests *.md
+
+# Exclude build artifacts and cache
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store
+

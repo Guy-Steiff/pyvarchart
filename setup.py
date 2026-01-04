@@ -11,10 +11,10 @@ def read_file(filename):
 
 setup(
     name='pyvarchart',
-    version='0.2.0',
-    author='PyVarChart Contributors',
-    author_email='',
-    description='A Python library for creating variability charts with hierarchical grouping',
+    version='1.0.0',
+    author='Guy Steiff',
+    author_email='guy.steiff-pvc@bytz.me',
+    description='A Python library for creating distribution charts with hierarchical x-axis grouping, statistical overlays, and flexible color themes',
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',
     url='https://github.com/Guy-Steiff/pyvarchart',
@@ -34,7 +34,7 @@ setup(
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
     ],
-    keywords='visualization, variability, chart, statistics, analysis, plotting',
+    keywords='visualization distribution chart statistics analysis plotting hierarchical grouping categorical data rf-testing quality-analysis',
     python_requires='>=3.8',
     install_requires=[
         'pandas>=1.3.0',

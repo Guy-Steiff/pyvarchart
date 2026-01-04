@@ -1,12 +1,15 @@
 # PyVarChart
 
-**A Python library for creating variability charts with hierarchical x-axis grouping**
+**A Python library for creating distribution charts with hierarchical x-axis grouping**
 
 [![Python Version](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.2.0-orange.svg)](CHANGELOG.md)
 
-PyVarChart enables sophisticated visualization of data variability across multiple categorical factors with support for custom ordering, color themes, marker styles, and statistical overlays. Perfect for exploring complex datasets with hierarchical grouping structures.
+PyVarChart enables sophisticated visualization of data distribution across multiple categorical factors with support for custom ordering, color themes, marker styles, and statistical overlays. Perfect for exploring complex datasets with hierarchical grouping structures.
+
+Demo Video:
+https://rumble.com/v73u4qu-pyvarchart-debut-showcase-demo.html
 
 ---
 
@@ -43,12 +46,17 @@ PyVarChart enables sophisticated visualization of data variability across multip
 🎯 **Use Cases:**
 - **RF/Hardware Testing** - Analyze measurements across chips, channels, frequencies, power levels
 - **A/B Testing** - Compare metrics across experimental conditions
-- **Quality Analysis** - Track variability across production batches, locations, time periods
+- **Quality Analysis** - Track distribution across production batches, locations, time periods
 - **Scientific Data** - Visualize results across treatment groups, timepoints, subjects
 
 ---
 
 ## Installation
+
+### Via pip (Recommended)
+```bash
+pip install pyvarchart
+```
 
 ### From Source
 ```bash
@@ -58,12 +66,10 @@ pip install -e .
 ```
 
 ### Requirements
-```
-python >= 3.7
-pandas >= 1.0.0
-numpy >= 1.18.0
-matplotlib >= 3.2.0
-```
+- **Python:** 3.8 or higher
+- **Dependencies:** pandas >= 1.3.0, numpy >= 1.20.0, matplotlib >= 3.3.0
+
+All dependencies are automatically installed with pip.
 
 ---
 
@@ -313,7 +319,7 @@ pvc = PyVarChart(
 #### Title
 ```python
 pvc = PyVarChart(
-    str_title='RF Noise Figure Variability Across Test Conditions'
+    str_title='RF Noise Figure distribution Across Test Conditions'
 )
 # Can also modify post-plot: plt.title('New Title')
 ```
@@ -364,7 +370,7 @@ pvc = PyVarChart(
         'temp': [-30, 25, 85]
     },
     
-    str_title='Example 1: RF Noise Figure Variability Analysis'
+    str_title='Example 1: RF Noise Figure distribution Analysis'
 )
 
 # Analyze and plot
@@ -476,7 +482,7 @@ fig.savefig('yield_analysis.png', dpi=100, bbox_inches='tight')
 
 ## More Examples
 
-### Basic Example: Simple variability chart with minimal configuration - perfect for getting started.
+### Basic Example: Simple distribution chart with minimal configuration - perfect for getting started.
 ```python
 # Sample data (smaller subset for basic example)
 str_data = ('chip, channel, lane, core, cmp, trim_read\n'
@@ -493,13 +499,13 @@ str_data = ('chip, channel, lane, core, cmp, trim_read\n'
             '0   , 2      , Q   , 1   , 0  , 164\n'
             '0   , 2      , Q   , 1   , 1  , 138'.replace(' ', ''))
 pd_data = pd.read_csv(StringIO(str_data))
-# Create basic variability chart
+# Create basic distribution chart
 pvc = PyVarChart(
     str_yaxis_var_name='trim_read',
     lst_xaxis_var_names=['chip', 'channel', 'lane', 'core', 'cmp'],
     str_color_theme='Blue to Green to Red',
     str_legend='lane',
-    str_title='Basic Variability Chart Example',
+    str_title='Basic distribution chart Example',
     int_frame_size_x=10,
     int_frame_size_y=6,
 )
@@ -565,7 +571,7 @@ pvc = PyVarChart(
     str_color_theme='Blue to Green to Red',
 
     # Layout
-    str_title='trim_read Variability Across Configs - Advanced Example',
+    str_title='trim_read distribution Across Configs - Advanced Example',
     int_frame_size_x=10,
     int_frame_size_y=6,
 
@@ -1010,7 +1016,13 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 - **Issues:** https://github.com/Guy-Steiff/pyvarchart/issues
 - **Email:** guy.steiff-pvc@bytz.me
 - **About the author**: https://guysteiff.vercel.app/
+- **LinkedIn:** https://linkedin.com/in/guy-steiff-7bbabba6
+- **Rumble:** https://rumble.com/c/c-7834440?e9s=src_v1_cbl
 
+## Support
+
+- **Bitcoin:** bc1qvyf20gjnm7rck35tnsm48cq8f82tttxkgmgkll
+- **Buy me a coffee:** https://buymeacoffee.com/steiff
 ---
 
 **Happy charting! 📊**

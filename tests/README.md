@@ -4,9 +4,9 @@ Unit tests for PyVarChart using pytest.
 
 ## Current Status
 
-✅ **All 28 tests passing** (as of v0.2.0, December 2024)  
+✅ **All 28 tests passing** (as of v1.0.0, January 2026)  
 ✅ **No errors**  
-✅ **Zero deprecation warnings** (matplotlib API updated)
+✅ **Zero deprecation warnings** (matplotlib API fully updated)
 
 ## Running Tests
 
@@ -71,7 +71,7 @@ pytest -v
 ✅ Invalid custom ordering warnings  
 ✅ Missing/extra values in orderings  
 
-### v0.2.0 Features
+### v1.0.0 Features
 ✅ **Flexible colormaps** - 100+ matplotlib colormaps (viridis, plasma, tab10, etc.)  
 ✅ **Continuous scale** - Auto-select 5-6 representative values for cleaner legends  
 ✅ **Color reversal** - Both `_r` suffix and `int_reverse_color_scheme` work  
@@ -98,7 +98,7 @@ pytest -v
 ### Utility Functions
 ✅ `legend_label()` - None handling and string conversion  
 
-## Recent Fixes (v0.2.0)
+## Recent Fixes (v1.0.0)
 
 ### Test File Issues Resolved
 1. **Boxplot empty data** - Added `int_boxplots=0` to tests with insufficient data
@@ -110,7 +110,8 @@ pytest -v
 1. **Matplotlib deprecation** - Updated `plt.cm.get_cmap()` → `mpl.colormaps[]`
 2. **Colormap normalization** - Handles both 'Blue to Green to Red' and 'blue_to_green_to_red'
 3. **Group means bug** - Fixed discontinuous position handling with NumPy segmentation
-4. **Fallback colormap** - Changed from non-existent colormap to 'tab10'
+4. **Fallback colormap** - Gracefully falls back to 'blue_to_green_to_red' for invalid colormaps
+5. **Missing legend handling** - Fixed crash when `str_legend` is None (initializes `use_continuous_scale=False`)
 
 ## Test Coverage Goal
 
